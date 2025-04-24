@@ -1,7 +1,7 @@
 import io.ygdrasil.webgpu.AutoClosableContext
 import io.ygdrasil.webgpu.CompositeAlphaMode
+import io.ygdrasil.webgpu.GPUTextureUsage
 import io.ygdrasil.webgpu.SurfaceConfiguration
-import io.ygdrasil.webgpu.TextureUsage
 import io.ygdrasil.webgpu.WGPUContext
 
 
@@ -15,7 +15,7 @@ fun AutoClosableContext.createScene(context: WGPUContext): RotatingCubeScene {
             SurfaceConfiguration(
                 device = context.device,
                 format = context.renderingContext.textureFormat,
-                usage = setOf(TextureUsage.RenderAttachment),
+                usage = setOf(GPUTextureUsage.RenderAttachment),
                 alphaMode = alphaMode
             )
         )
