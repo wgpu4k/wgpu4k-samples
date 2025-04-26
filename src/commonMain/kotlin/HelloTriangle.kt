@@ -13,13 +13,13 @@ import io.ygdrasil.webgpu.SurfaceConfiguration
 import io.ygdrasil.webgpu.VertexState
 import kotlinx.coroutines.runBlocking
 
-fun main() {
-    val window = WebGPUWindow()
+fun main() = AutoClose {
+    val window = WebGPUWindow().ac
 
-    val adapter = window.requestAdapter()
+    val adapter = window.requestAdapter().ac
 
-    val device = runBlocking { adapter.requestDevice().getOrThrow() }
-    val context = window.getWebGPUContext()
+    val device = runBlocking { adapter.requestDevice().getOrThrow() }.ac
+    val context = window.getWebGPUContext().ac
     val presentationFormat = window.getPresentationFormat(adapter)
 
     context.configure(
@@ -45,7 +45,7 @@ fun main() {
                     }
                 """.trimIndent()
         )
-    )
+    ).ac
 
     val pipeline = device.createRenderPipeline(
         RenderPipelineDescriptor(
@@ -63,11 +63,11 @@ fun main() {
                 topology = GPUPrimitiveTopology.TriangleList
             )
         )
-    )
+    ).ac
 
-    fun frame() {
-        val commandEncoder = device.createCommandEncoder()
-        val textureView = context.getCurrentTexture().texture.createView()
+    fun frame() = AutoClose {
+        val commandEncoder = device.createCommandEncoder().ac
+        val textureView = context.getCurrentTexture().texture.createView().ac
         val renderPassDescriptor = RenderPassDescriptor(
             colorAttachments = listOf(
                 RenderPassColorAttachment(

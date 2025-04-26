@@ -23,7 +23,7 @@ import java.util.*
 import java.util.Queue
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-actual class WebGPUWindow actual constructor(actual val fps: Int, actual val width: UInt, actual val height: UInt, actual val title: String) {
+actual class WebGPUWindow actual constructor(actual val fps: Int, actual val width: UInt, actual val height: UInt, actual val title: String): AutoCloseable {
     init {
         LibraryLoader.load()
         wgpuSetLogLevel(WGPULogLevel_Trace)
@@ -38,8 +38,6 @@ actual class WebGPUWindow actual constructor(actual val fps: Int, actual val wid
         // Disable context creation, WGPU will manage that
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API)
     }
-
-    // TODO: make sure to close things
 
     val windowHandler = glfwCreateWindow(width.toInt(), height.toInt(), title, NULL, NULL)
     val gpu = WGPU.createInstance() ?: error("failed to create wgpu instance")
@@ -80,6 +78,12 @@ actual class WebGPUWindow actual constructor(actual val fps: Int, actual val wid
                 }
             }
         }
+    }
+
+    override fun close() {
+        glfwDestroyWindow(windowHandler)
+        gpu.close()
+        nativeSurface.close()
     }
 }
 
