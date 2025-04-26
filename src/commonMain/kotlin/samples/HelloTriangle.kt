@@ -1,3 +1,6 @@
+package samples
+
+import WebGPUWindow
 import io.ygdrasil.webgpu.Color
 import io.ygdrasil.webgpu.ColorTargetState
 import io.ygdrasil.webgpu.FragmentState
@@ -13,7 +16,7 @@ import io.ygdrasil.webgpu.SurfaceConfiguration
 import io.ygdrasil.webgpu.VertexState
 import kotlinx.coroutines.runBlocking
 
-fun main() = AutoClose {
+fun main() = AutoClose.Companion {
     val window = WebGPUWindow().ac
 
     val adapter = window.requestAdapter().ac
@@ -65,7 +68,7 @@ fun main() = AutoClose {
         )
     ).ac
 
-    fun frame() = AutoClose {
+    fun frame() = AutoClose.Companion {
         val commandEncoder = device.createCommandEncoder().ac
         val textureView = context.getCurrentTexture().texture.createView().ac
         val renderPassDescriptor = RenderPassDescriptor(
