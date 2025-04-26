@@ -1,6 +1,5 @@
 import ffi.LibraryLoader
-import io.ygdrasil.webgpu.autoClosableContext
-import io.ygdrasil.webgpu.glfwContextRenderer
+import io.ygdrasil.webgpu.*
 import kotlinx.coroutines.runBlocking
 import org.lwjgl.glfw.GLFW.*
 
