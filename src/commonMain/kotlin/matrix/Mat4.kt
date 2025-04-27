@@ -1137,6 +1137,8 @@ class Mat4 private constructor(val array: FloatArray) {
         return multiply(m, newDst)
     }
 
+    fun rotate(axis: Vec3, angleInRadians: Float, dst: Mat4? = null) = axisRotate(axis, angleInRadians, dst)
+
     /**
      * Scales this 4-by-4 matrix in each dimension by an amount given by the
      * corresponding entry in the given vector.

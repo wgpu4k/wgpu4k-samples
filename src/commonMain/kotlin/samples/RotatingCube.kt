@@ -4,6 +4,7 @@ import WebGPUWindow
 import io.ygdrasil.webgpu.*
 import kotlinx.coroutines.runBlocking
 import matrix.Mat4
+import matrix.Vec3
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -83,7 +84,7 @@ fun main() = AutoClose.Companion {
     val verticesBuffer = device.createBuffer(
         BufferDescriptor(
             size = (cubeVertexArray.size * 4).toULong(),
-            usage = setOf(GPUBufferUsage.Vertex),
+            usage = setOf(GPUBufferUsage.Vertex, GPUBufferUsage.CopyDst),
             mappedAtCreation = true
         )
     ).ac
@@ -223,12 +224,13 @@ fun main() = AutoClose.Companion {
 
     // Function to get the transformation matrix
     fun getTransformationMatrix(): Mat4 {
-        TODO()
-//        val viewMatrix = Mat4.identity()
-//        viewMatrix.translate(0f, 0f, -4f)
-//        val now = System.currentTimeMillis() / 1000.0f
-//        viewMatrix.rotate(sin(now), cos(now), 0f, 1f)
-//        return Mat4.multiply(projectionMatrix, viewMatrix)
+        val viewMatrix = Mat4.identity()
+        viewMatrix.translate(Vec3(0f, 0f, -4f), viewMatrix)
+        val now = System.currentTimeMillis() / 1000.0f
+        viewMatrix.rotate(Vec3(sin(now), cos(now), 0f), 1f, viewMatrix)
+
+        projectionMatrix.multiply(viewMatrix, modelViewProjectionMatrix)
+        return modelViewProjectionMatrix
     }
 
     fun frame() = AutoClose.Companion {
