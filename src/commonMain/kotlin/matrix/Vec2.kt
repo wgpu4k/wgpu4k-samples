@@ -1,42 +1,31 @@
 package matrix
 
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.acos
-import kotlin.math.max
-import kotlin.math.min
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.random.Random
 
 /**
- * A 2-element vector.
+ * Represents a mutable 2D Vector with instance methods mimicking the JS API structure,
+ * including optional 'dst' parameter support.
+ *
+ * @property x The x component.
+ * @property y The y component.
  */
-class Vec2(val data: FloatArray) {
-    constructor(x: Float = 0f, y: Float = 0f) : this(floatArrayOf(x, y))
+data class Vec2(var x: Float = 0f, var y: Float = 0f) {
 
-    var x: Float
-        get() = data[0]
-        set(value) { data[0] = value }
-
-    var y: Float
-        get() = data[1]
-        set(value) { data[1] = value }
-
-    operator fun get(index: Int): Float = data[index]
-    operator fun set(index: Int, value: Float) { data[index] = value }
+    // --- Instance Methods (Operating on 'this', supporting 'dst') ---
 
     /**
-     * Creates a clone of this vector.
+     * Sets the components of this vector.
      *
-     * @return A new vector with the same values
-     */
-    fun clone(): Vec2 = Vec2(x, y)
-
-    /**
-     * Sets the values of this vector.
      *
-     * @param x First element
-     * @param y Second element
-     * @return This vector with updated values
+     * @param x The new x value.
+     * @param y The new y value.
+     * @return This Vec2 instance after modification.
      */
     fun set(x: Float, y: Float): Vec2 {
         this.x = x
@@ -45,269 +34,500 @@ class Vec2(val data: FloatArray) {
     }
 
     /**
-     * Adds another vector to this vector.
-     *
-     * @param b The vector to add
-     * @param dst Optional vector to store the result in
-     * @return The sum of the two vectors
+     * Applies Math.ceil to each component of this vector.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the ceiled components of the original `this`.
      */
-    fun add(b: Vec2, dst: Vec2 = Vec2()): Vec2 {
-        dst.x = x + b.x
-        dst.y = y + b.y
-        return dst
+    fun ceil(dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = kotlin.math.ceil(this.x)
+        target.y = kotlin.math.ceil(this.y)
+        return target
     }
 
     /**
-     * Subtracts another vector from this vector.
-     *
-     * @param b The vector to subtract
-     * @param dst Optional vector to store the result in
-     * @return The difference of the two vectors
+     * Applies Math.floor to each component of this vector.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the floored components of the original `this`.
      */
-    fun subtract(b: Vec2, dst: Vec2 = Vec2()): Vec2 {
-        dst.x = x - b.x
-        dst.y = y - b.y
-        return dst
+    fun floor(dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = kotlin.math.floor(this.x)
+        target.y = kotlin.math.floor(this.y)
+        return target
     }
 
     /**
-     * Multiplies this vector by another vector.
-     *
-     * @param b The vector to multiply by
-     * @param dst Optional vector to store the result in
-     * @return The product of the two vectors
+     * Applies Math.round to each component of this vector.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the rounded components of the original `this`.
      */
-    fun multiply(b: Vec2, dst: Vec2 = Vec2()): Vec2 {
-        dst.x = x * b.x
-        dst.y = y * b.y
-        return dst
+    fun round(dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = kotlin.math.round(this.x)
+        target.y = kotlin.math.round(this.y)
+        return target
     }
 
     /**
-     * Divides this vector by another vector.
-     *
-     * @param b The vector to divide by
-     * @param dst Optional vector to store the result in
-     * @return The quotient of the two vectors
+     * Clamps each component of this vector between min and max.
+     * @param min Min value (default 0f).
+     * @param max Max value (default 1f).
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the clamped components of the original `this`.
      */
-    fun divide(b: Vec2, dst: Vec2 = Vec2()): Vec2 {
-        dst.x = x / b.x
-        dst.y = y / b.y
-        return dst
+    fun clamp(min: Float = 0f, max: Float = 1f, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = this.x.coerceIn(min, max)
+        target.y = this.y.coerceIn(min, max)
+        return target
     }
 
     /**
-     * Scales this vector by a scalar.
-     *
-     * @param k The scalar value
-     * @param dst Optional vector to store the result in
-     * @return The scaled vector
+     * Adds another vector ('other') to this vector. (Result = this + other)
+     * @param other The vector to add.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the sum.
      */
-    fun scale(k: Float, dst: Vec2 = Vec2()): Vec2 {
-        dst.x = x * k
-        dst.y = y * k
-        return dst
+    fun add(other: Vec2, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = this.x + other.x
+        target.y = this.y + other.y
+        return target
     }
 
     /**
-     * Calculates the distance between this vector and another vector.
-     *
-     * @param b The second vector
-     * @return The distance between the two vectors
+     * Adds a scaled vector to this vector. (Result = this + other * scale)
+     * @param other The vector to scale and add.
+     * @param scale Amount to scale 'other'.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the result.
      */
-    fun distance(b: Vec2): Float {
-        val dx = x - b.x
-        val dy = y - b.y
-        return sqrt(dx * dx + dy * dy)
+    fun addScaled(other: Vec2, scale: Float, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = this.x + other.x * scale
+        target.y = this.y + other.y * scale
+        return target
     }
 
     /**
-     * Calculates the squared distance between this vector and another vector.
-     *
-     * @param b The second vector
-     * @return The squared distance between the two vectors
+     * Returns the angle in radians between this vector and another vector ('other').
+     * @param other The other vector.
+     * @returns The angle in radians.
      */
-    fun distanceSquared(b: Vec2): Float {
-        val dx = x - b.x
-        val dy = y - b.y
-        return dx * dx + dy * dy
+    fun angle(other: Vec2): Float {
+        // length() method now refers to 'this.length()'
+        val mag = this.length() * other.length() // Need to call length method on other too
+        val dotProd = this.dot(other) // Use dot method
+        val cosine = if (mag != 0f) dotProd / mag else 0f
+        return acos(cosine.coerceIn(-1f, 1f))
     }
 
     /**
-     * Calculates the length (magnitude) of this vector.
-     *
-     * @return The length of the vector
+     * Subtracts another vector ('other') from this vector. (Result = this - other)
+     * @param other The vector to subtract.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the difference.
+     */
+    fun subtract(other: Vec2, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = this.x - other.x
+        target.y = this.y - other.y
+        return target
+    }
+
+    /** Subtracts another vector ('other') from this vector. (Alias for subtract) */
+    fun sub(other: Vec2, dst: Vec2? = null): Vec2 = subtract(other, dst)
+
+    /**
+     * Checks if this vector is approximately equal to another vector ('other').
+     * @param other The vector to compare against.
+     * @returns true if vectors are approximately equal.
+     */
+    fun equalsApproximately(other: Vec2): Boolean {
+        return abs(this.x - other.x) < EPSILON &&
+                abs(this.y - other.y) < EPSILON
+    }
+
+    // Note: Default data class `equals` provides exact component-wise equality.
+    // The explicit `equals(a, b)` from the previous version is removed as it conflicts
+    // and the data class provides the standard behavior for `this == other`.
+
+    /**
+     * Performs linear interpolation between this vector and another ('other').
+     * Result = this + t * (other - this).
+     * @param other The target vector.
+     * @param t Interpolation coefficient.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @returns The Vec2 instance (`dst` or a new one) holding the interpolated result.
+     */
+    fun lerp(other: Vec2, t: Float, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = this.x + t * (other.x - this.x)
+        target.y = this.y + t * (other.y - this.y)
+        return target
+    }
+
+    /**
+     * Performs linear interpolation using a vector coefficient 't'.
+     * Result = this + t * (other - this).
+     * @param other The target vector.
+     * @param t Interpolation coefficients vector.
+     * @param dst vector to hold result. If null, a new one is created.
+     * @returns The Vec2 instance (`dst` or a new one) holding the interpolated result.
+     */
+    fun lerpV(other: Vec2, t: Vec2, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = this.x + t.x * (other.x - this.x)
+        target.y = this.y + t.y * (other.y - this.y)
+        return target
+    }
+
+    /**
+     * Returns a vector containing the component-wise max of this vector and 'other'.
+     * @param other The other vector.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @returns The Vec2 instance (`dst` or a new one) holding the max components.
+     */
+    fun max(other: Vec2, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = kotlin.math.max(this.x, other.x)
+        target.y = kotlin.math.max(this.y, other.y)
+        return target
+    }
+
+    /**
+     * Returns a vector containing the component-wise min of this vector and 'other'.
+     * @param other The other vector.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @returns The Vec2 instance (`dst` or a new one) holding the min components.
+     */
+    fun min(other: Vec2, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = kotlin.math.min(this.x, other.x)
+        target.y = kotlin.math.min(this.y, other.y)
+        return target
+    }
+
+    /**
+     * Multiplies this vector by a scalar 'k'.
+     * @param k The scalar.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the scaled vector result.
+     */
+    fun mulScalar(k: Float, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = this.x * k
+        target.y = this.y * k
+        return target
+    }
+
+    /** Multiplies this vector by a scalar. (Alias for mulScalar) */
+    fun scale(k: Float, dst: Vec2? = null): Vec2 = mulScalar(k, dst)
+
+    /**
+     * Divides this vector by a scalar 'k'.
+     * @param k The scalar.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the scaled vector result.
+     */
+    fun divScalar(k: Float, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = this.x / k
+        target.y = this.y / k
+        return target
+    }
+
+    /**
+     * Inverses this vector (component-wise 1/x).
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the inverted vector result.
+     */
+    fun inverse(dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = 1f / this.x
+        target.y = 1f / this.y
+        return target
+    }
+
+    /** Invert this vector. (Alias for inverse) */
+    fun invert(dst: Vec2? = null): Vec2 = inverse(dst)
+
+    /**
+     * Computes the cross product of this vector and 'other', returning a 3D vector (FloatArray[3]).
+     * @param other The other vector.
+     * @param dst FloatArray (size 3) to hold result. If null, a new one is created.
+     * @returns The 3D vector result [0, 0, z].
+     */
+    fun cross(other: Vec2, dst: FloatArray? = null): FloatArray {
+        val target = dst ?: FloatArray(3)
+        val z = this.x * other.y - this.y * other.x
+        target[0] = 0f
+        target[1] = 0f
+        target[2] = z
+        return target
+    }
+
+    /**
+     * Computes the dot product of this vector and 'other'.
+     * @param other The other vector.
+     * @returns dot product.
+     */
+    fun dot(other: Vec2): Float {
+        return this.x * other.x + this.y * other.y
+    }
+
+    /**
+     * Computes the length (magnitude) of this vector.
+     * @returns length of this vector.
      */
     fun length(): Float {
-        return sqrt(x * x + y * y)
+        return sqrt(this.lengthSq()) // Call lengthSq instance method
     }
 
+    /** Computes the length of this vector (Alias for length) */
+    fun len(): Float = length()
+
     /**
-     * Calculates the squared length of this vector.
-     *
-     * @return The squared length of the vector
+     * Computes the square of the length of this vector.
+     * @returns square of the length of this vector.
      */
-    fun lengthSquared(): Float {
+    fun lengthSq(): Float {
         return x * x + y * y
     }
 
+    /** Computes the square of the length of this vector (Alias for lengthSq) */
+    fun lenSq(): Float = lengthSq()
+
     /**
-     * Normalizes this vector.
-     *
-     * @param dst Optional vector to store the result in
-     * @return The normalized vector
+     * Computes the distance between this point and 'other'.
+     * @param other The other point.
+     * @returns distance between this and other.
      */
-    fun normalize(dst: Vec2 = Vec2()): Vec2 {
-        val length = this.length()
-        if (length > 0.00001f) {
-            dst.x = x / length
-            dst.y = y / length
+    fun distance(other: Vec2): Float {
+        return sqrt(this.distanceSq(other)) // Call distanceSq instance method
+    }
+
+    /** Computes the distance between this point and 'other' (Alias for distance) */
+    fun dist(other: Vec2): Float = distance(other)
+
+    /**
+     * Computes the square of the distance between this point and 'other'.
+     * @param other The other point.
+     * @returns square of the distance between this and other.
+     */
+    fun distanceSq(other: Vec2): Float {
+        val dx = this.x - other.x
+        val dy = this.y - other.y
+        return dx * dx + dy * dy
+    }
+
+    /** Computes the square of the distance between this point and 'other' (Alias for distanceSq) */
+    fun distSq(other: Vec2): Float = distanceSq(other)
+
+    /**
+     * Normalizes this vector (scales to unit length).
+     * @param dst vector to hold result. If null, a new one is created.
+     * @returns The Vec2 instance (`dst` or a new one) holding the normalized vector.
+     */
+    fun normalize(dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        val l = this.length() // Use instance length method
+        if (l > EPSILON) {
+            val invLen = 1f / l
+            target.x = this.x * invLen
+            target.y = this.y * invLen
         } else {
-            dst.x = 0f
-            dst.y = 0f
+            target.x = 0f
+            target.y = 0f
         }
-        return dst
+        return target
     }
 
     /**
      * Negates this vector.
-     *
-     * @param dst Optional vector to store the result in
-     * @return The negated vector
+     * @param dst vector to hold result. If null, a new one is created.
+     * @returns The Vec2 instance (`dst` or a new one) holding the negated vector.
      */
-    fun negate(dst: Vec2 = Vec2()): Vec2 {
-        dst.x = -x
-        dst.y = -y
-        return dst
+    fun negate(dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = -this.x
+        target.y = -this.y
+        return target
     }
 
     /**
-     * Computes the dot product of this vector and another vector.
-     *
-     * @param b The second vector
-     * @return The dot product
+     * Copies this vector's components into 'dst' or a new Vec2. (Same as clone)
+     * Note: data class provides `copy()` method for creating modified copies.
+     * This method adheres to the `dst` parameter pattern.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding a copy of this vector's components.
      */
-    fun dot(b: Vec2): Float {
-        return x * b.x + y * b.y
+    fun copyTo(dst: Vec2? = null): Vec2 { // Renamed from 'copy' to avoid clash
+        val target = dst ?: Vec2()
+        target.x = this.x
+        target.y = this.y
+        return target
+    }
+
+    /** Clones this vector into 'dst' or a new Vec2. (Alias for copyTo) */
+    fun clone(dst: Vec2? = null): Vec2 = copyTo(dst)
+
+    /**
+     * Multiplies this vector by 'other' component-wise.
+     * @param other The other vector.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the component-wise product.
+     */
+    fun multiply(other: Vec2, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = this.x * other.x
+        target.y = this.y * other.y
+        return target
+    }
+
+    /** Multiplies this vector by 'other' component-wise. (Alias for multiply) */
+    fun mul(other: Vec2, dst: Vec2? = null): Vec2 = multiply(other, dst)
+
+    /**
+     * Divides this vector by 'other' component-wise.
+     * @param other The other vector.
+     * @param dst Vector to hold result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the component-wise quotient.
+     */
+    fun divide(other: Vec2, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        target.x = this.x / other.x
+        target.y = this.y / other.y
+        return target
+    }
+
+    /** Divides this vector by 'other' component-wise. (Alias for divide) */
+    fun div(other: Vec2, dst: Vec2? = null): Vec2 = divide(other, dst)
+
+    /**
+     * Transforms this vector (point, w=1) by a 4x4 matrix 'm' (column-major).
+     * @param m The matrix (Mat4Arg - FloatArray[16]).
+     * @param dst Optional Vec2 to store result. If null, a new one is created.
+     * @return The Vec2 instance (`dst` or a new one) holding the transformed vector.
+     */
+    fun transformMat4(m: Mat4, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        // Store original x,y in case target === this
+        val originalX = this.x
+        val originalY = this.y
+        target.x = originalX * m[0] + originalY * m[4] + m[12]
+        target.y = originalX * m[1] + originalY * m[5] + m[13]
+        return target
     }
 
     /**
-     * Computes the angle between this vector and another vector.
-     *
-     * @param b The second vector
-     * @return The angle in radians
+     * Transforms this vector (point, w=1) by a 3x3 matrix [m].
      */
-    fun angle(b: Vec2): Float {
-        val mag1 = sqrt(x * x + y * y)
-        val mag2 = sqrt(b.x * b.x + b.y * b.y)
+    fun transformMat3(m: Mat3, dst: Vec2? = null): Vec2 {
+        val newDst = (dst ?:  Vec2())
 
-        if (mag1 == 0f || mag2 == 0f) {
-            return 0f
-        }
+        newDst.x = m[0] * x + m[4] * y + m[8];
+        newDst.y = m[1] * x + m[5] * y + m[9];
 
-        val cosine = (x * b.x + y * b.y) / (mag1 * mag2)
+        return newDst
+    }
 
-        return if (cosine > 1f) {
-            0f
-        } else if (cosine < -1f) {
-            kotlin.math.PI.toFloat()
+    /**
+     * Rotates this vector (point) around a given 'origin' by 'rad' radians.
+     * @param origin The origin of the rotation.
+     * @param rad The angle of rotation in radians.
+     * @param dst Optional Vec2 to store result. If null, a new one is created.
+     * @returns The Vec2 instance (`dst` or a new one) holding the rotated vector.
+     */
+    fun rotate(origin: Vec2, rad: Float, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        // Translate point to the origin relative to 'origin'
+        val p0 = this.x - origin.x
+        val p1 = this.y - origin.y
+        val sinC = sin(rad)
+        val cosC = cos(rad)
+        // Perform rotation and translate back
+        target.x = p0 * cosC - p1 * sinC + origin.x
+        target.y = p0 * sinC + p1 * cosC + origin.y
+        return target
+    }
+
+    /**
+     * Sets the length of this vector. Modifies the vector components in 'dst' or a new Vec2.
+     * @param len The desired length.
+     * @param dst Optional Vec2 to store result. If null, a new one is created.
+     * @returns The Vec2 instance (`dst` or a new one) with the specified length.
+     */
+    fun setLength(len: Float, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        // Normalize 'this' vector's components into 'target'
+        this.normalize(target) // Use normalize method, outputting to target
+        // Scale 'target' in place to the desired length
+        target.x *= len
+        target.y *= len
+        return target
+    }
+
+    /**
+     * Truncates this vector if its length exceeds 'maxLen'.
+     * @param maxLen The maximum allowed length.
+     * @param dst Optional Vec2 to store result. If null, a new one is created.
+     * @returns The Vec2 instance (`dst` or a new one) holding the truncated vector or a copy of the original.
+     */
+    fun truncate(maxLen: Float, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        val lSq = this.lengthSq() // Use instance lengthSq
+        if (lSq > maxLen * maxLen) {
+            // If too long, calculate the correctly scaled vector using setLength
+            // We want the result in target, so pass target as dst to setLength
+            this.setLength(maxLen, target)
         } else {
-            acos(cosine)
+            // Otherwise, just copy this vector's components into target
+            this.copyTo(target)
         }
+        return target
     }
 
     /**
-     * Linearly interpolates between this vector and another vector.
-     *
-     * @param b The end vector
-     * @param t The interpolation coefficient
-     * @param dst Optional vector to store the result in
-     * @return The interpolated vector
+     * Calculates the midpoint between this vector and 'other'.
+     * @param other The other endpoint.
+     * @param dst Optional Vec2 to store result. If null, a new one is created.
+     * @returns The Vec2 instance (`dst` or a new one) holding the midpoint vector.
      */
-    fun lerp(b: Vec2, t: Float, dst: Vec2 = Vec2()): Vec2 {
-        dst.x = x + (b.x - x) * t
-        dst.y = y + (b.y - y) * t
-        return dst
+    fun midpoint(other: Vec2, dst: Vec2? = null): Vec2 {
+        val target = dst ?: Vec2()
+        // Calculate lerp(this, other, 0.5f) and store in target
+        this.lerp(other, 0.5f, target)
+        return target
     }
 
-    /**
-     * Checks if this vector is approximately equal to another vector.
-     *
-     * @param b The second vector
-     * @return True if the vectors are approximately equal
-     */
-    fun equalsApproximately(b: Vec2): Boolean {
-        return abs(x - b.x) < EPSILON && 
-               abs(y - b.y) < EPSILON
-    }
-
-    /**
-     * Transforms this vector by a 3x3 matrix.
-     *
-     * @param m The 3x3 matrix
-     * @param dst Optional vector to store the result in
-     * @return The transformed vector
-     */
-    fun transformMat3(m: FloatArray, dst: Vec2 = Vec2()): Vec2 {
-        val x = this.x
-        val y = this.y
-        dst.x = m[0] * x + m[3] * y + m[6]
-        dst.y = m[1] * x + m[4] * y + m[7]
-        return dst
-    }
-
-    /**
-     * Transforms this vector by a 4x4 matrix.
-     *
-     * @param m The 4x4 matrix
-     * @param dst Optional vector to store the result in
-     * @return The transformed vector
-     */
-    fun transformMat4(m: FloatArray, dst: Vec2 = Vec2()): Vec2 {
-        val x = this.x
-        val y = this.y
-        dst.x = m[0] * x + m[4] * y + m[12]
-        dst.y = m[1] * x + m[5] * y + m[13]
-        return dst
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is Vec2) return false
-        return x == other.x && y == other.y
-    }
-
-    override fun hashCode(): Int {
-        var result = x.hashCode()
-        result = 31 * result + y.hashCode()
-        return result
-    }
-
-    override fun toString(): String {
-        return "Vec2(x=$x, y=$y)"
-    }
-
+    // --- Companion Object for Static Factories and Constants ---
     companion object {
-        fun create(): Vec2 {
-            TODO()
-        }
-        /**
-         * Creates a random vector.
-         *
-         * @param scale The scale of the random values
-         * @return The random vector
-         */
-        fun random(scale: Float = 1f): Vec2 {
-            return Vec2(Random.nextFloat() * scale, Random.nextFloat() * scale)
+        /** A small epsilon value for floating-point comparisons. */
+        const val EPSILON: Float = matrix.EPSILON
+
+        /** Creates a new Vec2 instance. */
+        fun create(x: Float = 0f, y: Float = 0f): Vec2 = Vec2(x, y)
+
+        /** Creates a new Vec2 instance. (Alias for create) */
+        fun fromValues(x: Float = 0f, y: Float = 0f): Vec2 = Vec2(x, y)
+
+        /** Creates a random unit vector scaled by `scale`. */
+        fun random(scale: Float = 1f, dst: Vec2? = null): Vec2 {
+            val target = dst ?: Vec2()
+            val angle = Random.nextFloat() * 2f * PI.toFloat()
+            target.x = cos(angle) * scale
+            target.y = sin(angle) * scale
+            return target
         }
 
-        /**
-         * Creates a zero vector.
-         *
-         * @return The zero vector
-         */
-        fun zero(): Vec2 {
-            return Vec2(0f, 0f)
+        /** Zero's a vector (sets components to 0). */
+        fun zero(dst: Vec2? = null): Vec2 {
+            val target = dst ?: Vec2()
+            target.x = 0f
+            target.y = 0f
+            return target
         }
     }
 }

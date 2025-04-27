@@ -6,73 +6,6 @@ import kotlin.math.*
 // Assuming Mat3, Mat3Utils, Vec2, Vec3, Vec2Arg, Vec3Arg, Mat4Arg are defined as in the previous response.
 // If not, copy them here.
 
-// Define minimal stubs for dependencies used in tests
-object Mat4 {
-    fun create(
-        m00: Float, m01: Float, m02: Float, m03: Float,
-        m10: Float, m11: Float, m12: Float, m13: Float,
-        m20: Float, m21: Float, m22: Float, m23: Float,
-        m30: Float, m31: Float, m32: Float, m33: Float
-    ): Mat4Arg = floatArrayOf(
-        m00, m01, m02, m03,
-        m10, m11, m12, m13,
-        m20, m21, m22, m23,
-        m30, m31, m32, m33
-    )
-
-    fun rotationX(angleInRadians: Float): Mat4Arg {
-        val c = cos(angleInRadians)
-        val s = sin(angleInRadians)
-        return create(
-            1f, 0f, 0f, 0f,
-            0f, c, s, 0f,
-            0f, -s, c, 0f,
-            0f, 0f, 0f, 1f
-        )
-    }
-
-    fun rotationY(angleInRadians: Float): Mat4Arg {
-        val c = cos(angleInRadians)
-        val s = sin(angleInRadians)
-        return create(
-            c, 0f, -s, 0f,
-            0f, 1f, 0f, 0f,
-            s, 0f, c, 0f,
-            0f, 0f, 0f, 1f
-        )
-    }
-
-    fun rotationZ(angleInRadians: Float): Mat4Arg {
-        val c = cos(angleInRadians)
-        val s = sin(angleInRadians)
-        return create(
-            c, s, 0f, 0f,
-            -s, c, 0f, 0f,
-            0f, 0f, 1f, 0f,
-            0f, 0f, 0f, 1f
-        )
-    }
-}
-
-object Quat {
-    // Simplified fromEuler for testing purposes
-    fun fromEuler(x: Float, y: Float, z: Float, order: String): FloatArray {
-        // Assuming 'xyz' order for simplicity as used in the tests
-        val sx = sin(x * 0.5f)
-        val cx = cos(x * 0.5f)
-        val sy = sin(y * 0.5f)
-        val cy = cos(y * 0.5f)
-        val sz = sin(z * 0.5f)
-        val cz = cos(z * 0.5f)
-
-        val qx = sx * cy * cz - cx * sy * sz
-        val qy = cx * sy * cz + sx * cy * sz
-        val qz = cx * cy * sz - sx * sy * cz
-        val qw = cx * cy * cz + sx * sy * sz
-
-        return floatArrayOf(qx, qy, qz, qw)
-    }
-}
 
 
 // Helper assertion functions
@@ -90,12 +23,24 @@ fun assertMat3Equal(actual: Mat3, expected: Mat3, message: String? = null) {
     }
 }
 
+fun assertVec2EqualApproximately(actual: Vec2, expected: Vec2, message: String? = null) {
+        if (abs(actual.x - expected.x) >= EPSILON) {
+            val errorMessage = message ?: "Vec2s are not approximately equal at x. Expected ${expected.x} but was ${expected.x}"
+            fail(errorMessage)
+        }
+        if (abs(actual.y - expected.y) >= EPSILON) {
+            val errorMessage = message ?: "Vec2s are not approximately equal at y. Expected ${expected.y} but was ${expected.y}"
+            fail(errorMessage)
+        }
+
+}
+
 fun assertFloatArrayEqualApproximately(actual: FloatArray, expected: FloatArray, message: String? = null) {
     if (actual.size != expected.size) {
         fail("Array sizes do not match. Expected ${expected.size} but was ${actual.size}")
     }
     for (i in actual.indices) {
-        if (abs(actual[i] - expected[i]) >= Mat3Utils.EPSILON) {
+        if (abs(actual[i] - expected[i]) >= EPSILON) {
             val errorMessage = message ?: "Arrays are not approximately equal at index $i. Expected ${expected[i]} but was ${actual[i]}"
             fail(errorMessage)
         }
@@ -131,38 +76,36 @@ class Mat3Test {
 
     // Helper function to test Mat3 functions that return a Vec2Arg (FloatArray)
     private fun testVec2WithAndWithoutDest(
-        func: (dst: Vec2Arg?) -> Vec2Arg,
-        expected: Vec2Arg,
+        func: (dst: Vec2?) -> Vec2,
+        expected: Vec2,
         message: String? = null
     ) {
-        TODO()
-//        // Test without destination
-//        val resultWithoutDest = func(null)
-//        assertFloatArrayEqualApproximately(resultWithoutDest, expected, "$message - without dest")
-//
-//        // Test with destination
-//        val dest = Vec2.create() // Create a new destination vector
-//        val resultWithDest = func(dest)
-//        assertStrictEquals(resultWithDest, dest, "$message - with dest: returned object is not the destination")
-//        assertFloatArrayEqualApproximately(resultWithDest, expected, "$message - with dest")
+        // Test without destination
+        val resultWithoutDest = func(null)
+        assertVec2EqualApproximately(resultWithoutDest, expected, "$message - without dest")
+
+        // Test with destination
+        val dest = Vec2.create() // Create a new destination vector
+        val resultWithDest = func(dest)
+        assertStrictEquals(resultWithDest, dest, "$message - with dest: returned object is not the destination")
+        assertVec2EqualApproximately(resultWithDest, expected, "$message - with dest")
     }
 
     // Helper function to test Mat3 functions that return a Vec3Arg (FloatArray)
     private fun testVec3WithAndWithoutDest(
-        func: (dst: Vec3Arg?) -> Vec3Arg,
-        expected: Vec3Arg,
+        func: (dst: Vec3?) -> Vec3,
+        expected: Vec3,
         message: String? = null
     ) {
-        TODO()
-//        // Test without destination
-//        val resultWithoutDest = func(null)
-//        assertFloatArrayEqualApproximately(resultWithoutDest, expected, "$message - without dest")
-//
-//        // Test with destination
-//        val dest = Vec3.create() // Create a new destination vector
-//        val resultWithDest = func(dest)
-//        assertStrictEquals(resultWithDest, dest, "$message - with dest: returned object is not the destination")
-//        assertFloatArrayEqualApproximately(resultWithDest, expected, "$message - with dest")
+        // Test without destination
+        val resultWithoutDest = func(null)
+        assertVec3EqualsApproximately(resultWithoutDest, expected,message = "$message - without dest")
+
+        // Test with destination
+        val dest = Vec3.create() // Create a new destination vector
+        val resultWithDest = func(dest)
+        assertStrictEquals(resultWithDest, dest, "$message - with dest: returned object is not the destination")
+        assertVec3EqualsApproximately(resultWithDest, expected, message ="$message - with dest")
     }
 
 
@@ -242,7 +185,7 @@ class Mat3Test {
     fun testEqualsApproximately() {
         // Helper to generate a matrix with slightly different values
         fun genAlmostEqualMat(ignoreIndex: Int) = FloatArray(12) { ndx ->
-            if (ndx == ignoreIndex || ndx == 3 || ndx == 7 || ndx == 11) ndx.toFloat() else ndx.toFloat() + Mat3Utils.EPSILON * 0.5f
+            if (ndx == ignoreIndex || ndx == 3 || ndx == 7 || ndx == 11) ndx.toFloat() else ndx.toFloat() + EPSILON * 0.5f
         }
 
         // Helper to generate a matrix with significantly different values
@@ -427,7 +370,7 @@ class Mat3Test {
             )) to 24f // 2 * 3 * 4 = 24
         )
         for ((inputM, expectedDet) in tests) {
-            assertEquals(inputM.determinant(), expectedDet, Mat3Utils.EPSILON)
+            assertEquals(inputM.determinant(), expectedDet, EPSILON)
         }
     }
 
@@ -440,20 +383,20 @@ class Mat3Test {
             4f,  5f,  6f, 0f,
             11f, 22f,  1f, 0f // Note: the TS test has 1 here, which seems incorrect for a pure translation setting on Mat3 layout
         ))
-        testMat3WithAndWithoutDest({ dst -> m.setTranslation(floatArrayOf(11f, 22f), dst) }, expected)
+        testMat3WithAndWithoutDest({ dst -> m.setTranslation(Vec2(11f, 22f), dst) }, expected)
     }
 
     @Test
     fun testGetTranslation() {
-        val expected = floatArrayOf(8f, 9f)
+        val expected = Vec2(8f, 9f)
         testVec2WithAndWithoutDest({ dst -> m.getTranslation(dst) }, expected)
     }
 
     @Test
     fun testGetAxis() {
         val tests = listOf(
-            0 to floatArrayOf(0f, 1f), // X axis
-            1 to floatArrayOf(4f, 5f)  // Y axis
+            0 to Vec2(0f, 1f), // X axis
+            1 to Vec2(4f, 5f)  // Y axis
         )
         for ((axis, expected) in tests) {
             testVec2WithAndWithoutDest({ dst -> m.getAxis(axis, dst) }, expected, "getAxis($axis)")
@@ -474,7 +417,7 @@ class Mat3Test {
                 8f,  9f, 10f,  0f
             ))
         )
-        val v = floatArrayOf(11f, 22f)
+        val v = Vec2(11f, 22f)
         for ((axis, expected) in tests) {
             testMat3WithAndWithoutDest({ dst -> m.setAxis(v, axis, dst) }, expected, "setAxis($axis)")
         }
@@ -487,7 +430,7 @@ class Mat3Test {
             5f,  6f,  7f, 0f,
             9f, 10f, 11f, 0f
         ))
-        val expected = floatArrayOf(
+        val expected = Vec2(
             sqrt(2f * 2f + 8f * 8f),
             sqrt(5f * 5f + 6f * 6f)
         )
@@ -501,7 +444,7 @@ class Mat3Test {
             5f,  6f,  7f, 8f,
             9f, 10f, 11f, 12f
         ))
-        val expected = floatArrayOf(
+        val expected = Vec3(
             sqrt(1f * 1f + 2f * 2f + 3f * 3f),
             sqrt(5f * 5f + 6f * 6f + 7f * 7f),
             sqrt(9f * 9f + 10f * 10f + 11f * 11f)
@@ -516,7 +459,7 @@ class Mat3Test {
             0f, 1f, 0f, 0f,
             2f, 3f, 1f, 0f
         ))
-        testMat3WithAndWithoutDest({ dst -> Mat3.translation(floatArrayOf(2f, 3f), dst) }, expected)
+        testMat3WithAndWithoutDest({ dst -> Mat3.translation(Vec2(2f, 3f), dst) }, expected)
     }
 
     @Test
@@ -528,7 +471,7 @@ class Mat3Test {
             9f + 1f * 2f + 5f * 3f,
             10f + 2f * 2f + 6f * 3f, 0f
         ))
-        testMat3WithAndWithoutDest({ dst -> m.translate(floatArrayOf(2f, 3f), dst) }, expected)
+        testMat3WithAndWithoutDest({ dst -> m.translate(Vec2(2f, 3f), dst) }, expected)
     }
 
     @Test
@@ -627,7 +570,7 @@ class Mat3Test {
             0f, 3f, 0f, 0f,
             0f, 0f, 1f, 0f
         ))
-        testMat3WithAndWithoutDest({ dst -> Mat3.scaling(floatArrayOf(2f, 3f), dst) }, expected)
+        testMat3WithAndWithoutDest({ dst -> Mat3.scaling(Vec2(2f, 3f), dst) }, expected)
     }
 
     @Test
@@ -637,7 +580,7 @@ class Mat3Test {
             4f * 3f,  5f * 3f,  6f * 3f,  0f,
             8f,  9f, 10f,  0f
         ))
-        testMat3WithAndWithoutDest({ dst -> m.scale(floatArrayOf(2f, 3f), dst) }, expected)
+        testMat3WithAndWithoutDest({ dst -> m.scale(Vec2(2f, 3f), dst) }, expected)
     }
 
     @Test
@@ -647,7 +590,7 @@ class Mat3Test {
             0f, 3f, 0f, 0f,
             0f, 0f, 4f, 0f
         ))
-        testMat3WithAndWithoutDest({ dst -> Mat3.scaling3D(floatArrayOf(2f, 3f, 4f), dst) }, expected)
+        testMat3WithAndWithoutDest({ dst -> Mat3.scaling3D(Vec3(2f, 3f, 4f), dst) }, expected)
     }
 
     @Test
@@ -657,7 +600,7 @@ class Mat3Test {
             4f * 3f,  5f * 3f,  6f * 3f,  0f,
             8f * 4f,  9f * 4f, 10f * 4f,  0f
         ))
-        testMat3WithAndWithoutDest({ dst -> m.scale3D(floatArrayOf(2f, 3f, 4f), dst) }, expected)
+        testMat3WithAndWithoutDest({ dst -> m.scale3D(Vec3(2f, 3f, 4f), dst) }, expected)
     }
 
     @Test
@@ -704,7 +647,7 @@ class Mat3Test {
 
     @Test
     fun testFromMat4() {
-        val m4 = Mat4.create(
+        val m4 = Mat4(
             1f, 2f, 3f, 4f,
             5f, 6f, 7f, 8f,
             9f, 10f, 11f, 12f,
@@ -721,12 +664,12 @@ class Mat3Test {
     @Test
     fun testFromQuat() {
         val tests = listOf(
-            Quat.fromEuler(PI.toFloat(), 0f, 0f, "xyz") to Mat3.fromMat4(Mat4.rotationX(PI.toFloat())),
-            Quat.fromEuler(0f, PI.toFloat(), 0f, "xyz") to Mat3.fromMat4(Mat4.rotationY(PI.toFloat())),
-            Quat.fromEuler(0f, 0f, PI.toFloat(), "xyz") to Mat3.fromMat4(Mat4.rotationZ(PI.toFloat())),
-            Quat.fromEuler(PI.toFloat() / 2f, 0f, 0f, "xyz") to Mat3.fromMat4(Mat4.rotationX(PI.toFloat() / 2f)),
-            Quat.fromEuler(0f, PI.toFloat() / 2f, 0f, "xyz") to Mat3.fromMat4(Mat4.rotationY(PI.toFloat() / 2f)),
-            Quat.fromEuler(0f, 0f, PI.toFloat() / 2f, "xyz") to Mat3.fromMat4(Mat4.rotationZ(PI.toFloat() / 2f))
+            Quat.fromEuler(PI, 0.0, 0.0, "xyz") to Mat3.fromMat4(Mat4.rotationX(PI.toFloat())),
+            Quat.fromEuler(0.0, PI, 0.0, "xyz") to Mat3.fromMat4(Mat4.rotationY(PI.toFloat())),
+            Quat.fromEuler(0.0, 0.0, PI, "xyz") to Mat3.fromMat4(Mat4.rotationZ(PI.toFloat())),
+            Quat.fromEuler(PI / 2, 0.0, 0.0, "xyz") to Mat3.fromMat4(Mat4.rotationX(PI.toFloat() / 2f)),
+            Quat.fromEuler(0.0, PI / 2f, 0.0, "xyz") to Mat3.fromMat4(Mat4.rotationY(PI.toFloat() / 2f)),
+            Quat.fromEuler(0.0, 0.0, PI / 2f, "xyz") to Mat3.fromMat4(Mat4.rotationZ(PI.toFloat() / 2f))
         )
         for ((q, expected) in tests) {
             testMat3WithAndWithoutDest({ dst -> Mat3.fromQuat(q, dst) }, expected)

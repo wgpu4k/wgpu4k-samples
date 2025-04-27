@@ -6,18 +6,18 @@ import kotlin.math.abs
 /**
  * Epsilon value for floating-point comparisons
  */
-var EPSILON = 0.000001f
+internal const val EPSILON = 0.000001f
 
-/**
- * Set the value for EPSILON for various checks
- * @param v Value to use for EPSILON.
- * @return previous value of EPSILON
- */
-fun setEpsilon(v: Float): Float {
-    val old = EPSILON
-    EPSILON = v
-    return old
-}
+///**
+// * Set the value for EPSILON for various checks
+// * @param v Value to use for EPSILON.
+// * @return previous value of EPSILON
+// */
+//fun setEpsilon(v: Float): Float {
+//    val old = EPSILON
+//    EPSILON = v
+//    return old
+//}
 
 /**
  * Convert degrees to radians

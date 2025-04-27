@@ -1,23 +1,13 @@
+@file:Suppress("NOTHING_TO_INLINE")
+
 package matrix
 
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-// Assuming these types are defined elsewhere in your Kotlin project
-// or can be represented by standard Kotlin types like FloatArray.
-// For this conversion, we'll assume Mat3Arg, Mat4Arg, Vec2Arg, Vec3Arg are FloatArray.
-// You might want to define more specific data classes for better type safety
-// if they are not just simple FloatArrays.
-typealias Mat3Arg = FloatArray // Represents a 3x3 matrix stored in a 12-element array (like Mat4 layout)
-typealias Mat4Arg = FloatArray
-typealias Vec2Arg = FloatArray
-typealias Vec3Arg = FloatArray
 
-// Assuming a utility object for epsilon comparison
-object Mat3Utils {
-    const val EPSILON = 0.000001f // Or a suitable epsilon value
-}
+
 
 
 
@@ -38,13 +28,28 @@ object Mat3Utils {
  * The provided JS code uses indices 0-2, 4-6, 8-10, which corresponds to the
  * first 3 rows and first 3 columns of a 4x4 matrix.
  */
-/*@JvmInline value*/ class Mat3 private constructor(private val values: FloatArray) {
+/*@JvmInline value*/ class Mat3 private constructor( val arrays: FloatArray) {
+
+    inline val m00 get() = this[0]
+    inline val m01 get() = this[4]
+    inline val m02 get() = this[8]
+    inline val m10 get() = this[1]
+    inline val m11 get() = this[5]
+    inline val m12 get() = this[9]
+    inline val m20 get() = this[2]
+    inline val m21 get() = this[6]
+    inline val m22 get() = this[10]
 
     init {
-        if (values.size != 12) {
+        if (arrays.size != 12) {
             throw IllegalArgumentException("Mat3 requires a 12-element FloatArray for storage.")
         }
     }
+
+    inline operator fun get(index: Int): Float {
+        return this.arrays[index]
+    }
+
 
     /**
      * Creates a new Mat3 with the given values.
@@ -74,7 +79,22 @@ object Mat3Utils {
         this[11] = 0f
     })
 
+
+    override fun toString(): String {
+        return """
+            [$m00,$m01,$m02]
+            [$m10,$m11,$m12]
+            [$m20,$m21,$m22]
+        """.trimIndent()
+    }
+
     companion object {
+
+        /**
+         * You should generally not use this constructor as it assumes indices 3, 7 and 11 are all 0s for padding reasons
+         */
+        operator fun invoke(vararg values: Float) = Mat3(floatArrayOf(*values))
+
         /**
          * Creates a Mat3 from a 12-element FloatArray.
          * Assumes the array is already in the correct internal format.
@@ -94,9 +114,9 @@ object Mat3Utils {
         fun identity(dst: Mat3? = null): Mat3 {
             val newDst = dst ?: Mat3()
             return newDst.apply {
-                values[ 0] = 1f; values[ 1] = 0f; values[ 2] = 0f; values[ 3] = 0f
-                values[ 4] = 0f; values[ 5] = 1f; values[ 6] = 0f; values[ 7] = 0f
-                values[ 8] = 0f; values[ 9] = 0f; values[10] = 1f; values[11] = 0f
+                arrays[ 0] = 1f; arrays[ 1] = 0f; arrays[ 2] = 0f; arrays[ 3] = 0f
+                arrays[ 4] = 0f; arrays[ 5] = 1f; arrays[ 6] = 0f; arrays[ 7] = 0f
+                arrays[ 8] = 0f; arrays[ 9] = 0f; arrays[10] = 1f; arrays[11] = 0f
             }
         }
 
@@ -106,12 +126,12 @@ object Mat3Utils {
          * @param dst - matrix to hold result. If null, a new one is created.
          * @returns Mat3 made from m4.
          */
-        fun fromMat4(m4: Mat4Arg, dst: Mat3? = null): Mat3 {
+        fun fromMat4(m4: Mat4, dst: Mat3? = null): Mat3 {
             val newDst = dst ?: Mat3()
             return newDst.apply {
-                values[0] = m4[0];  values[1] = m4[1];  values[ 2] = m4[ 2];  values[ 3] = 0f
-                values[4] = m4[4];  values[5] = m4[5];  values[ 6] = m4[ 6];  values[ 7] = 0f
-                values[8] = m4[8];  values[9] = m4[9];  values[10] = m4[10];  values[11] = 0f
+                arrays[0] = m4[0];  arrays[1] = m4[1];  arrays[ 2] = m4[ 2];  arrays[ 3] = 0f
+                arrays[4] = m4[4];  arrays[5] = m4[5];  arrays[ 6] = m4[ 6];  arrays[ 7] = 0f
+                arrays[8] = m4[8];  arrays[9] = m4[9];  arrays[10] = m4[10];  arrays[11] = 0f
             }
         }
 
@@ -121,10 +141,10 @@ object Mat3Utils {
          * @param dst - matrix to hold result. If null, a new one is created.
          * @returns Mat3 made from q.
          */
-        fun fromQuat(q: FloatArray, dst: Mat3? = null): Mat3 { // Assuming QuatArg is FloatArray
+        fun fromQuat(q: Quat, dst: Mat3? = null): Mat3 { // Assuming QuatArg is FloatArray
             val newDst = dst ?: Mat3()
 
-            val x = q[0]; val y = q[1]; val z = q[2]; val w = q[3];
+            val x = q.x.toFloat(); val y = q.y.toFloat(); val z = q.z.toFloat(); val w = q.w.toFloat();
             val x2 = x + x; val y2 = y + y; val z2 = z + z;
 
             val xx = x * x2;
@@ -138,9 +158,9 @@ object Mat3Utils {
             val wz = w * z2;
 
             return newDst.apply {
-                values[ 0] = 1f - yy - zz;  values[ 1] = yx + wz;      values[ 2] = zx - wy;      values[ 3] = 0f;
-                values[ 4] = yx - wz;      values[ 5] = 1f - xx - zz;  values[ 6] = zy + wx;      values[ 7] = 0f;
-                values[ 8] = zx + wy;      values[ 9] = zy - wx;      values[10] = 1f - xx - yy;  values[11] = 0f;
+                arrays[ 0] = 1f - yy - zz;  arrays[ 1] = yx + wz;      arrays[ 2] = zx - wy;      arrays[ 3] = 0f;
+                arrays[ 4] = yx - wz;      arrays[ 5] = 1f - xx - zz;  arrays[ 6] = zy + wx;      arrays[ 7] = 0f;
+                arrays[ 8] = zx + wy;      arrays[ 9] = zy - wx;      arrays[10] = 1f - xx - yy;  arrays[11] = 0f;
             }
         }
 
@@ -150,13 +170,13 @@ object Mat3Utils {
          * @param dst - matrix to hold result. If null, a new one is created.
          * @returns The translation matrix.
          */
-        fun translation(v: Vec2Arg, dst: Mat3? = null): Mat3 {
+        fun translation(v: Vec2, dst: Mat3? = null): Mat3 {
             val newDst = dst ?: Mat3()
 
             return newDst.apply {
-                values[ 0] = 1f;     values[ 1] = 0f;     values[ 2] = 0f; values[3] = 0f
-                values[ 4] = 0f;     values[ 5] = 1f;     values[ 6] = 0f; values[7] = 0f
-                values[ 8] = v[0];  values[ 9] = v[1];  values[10] = 1f; values[11] = 0f
+                arrays[ 0] = 1f;     arrays[ 1] = 0f;     arrays[ 2] = 0f; arrays[3] = 0f
+                arrays[ 4] = 0f;     arrays[ 5] = 1f;     arrays[ 6] = 0f; arrays[7] = 0f
+                arrays[ 8] = v.x;  arrays[ 9] = v.y;  arrays[10] = 1f; arrays[11] = 0f
             }
         }
 
@@ -173,9 +193,9 @@ object Mat3Utils {
             val s = sin(angleInRadians);
 
             return newDst.apply {
-                values[ 0] =  c;  values[ 1] = s;  values[ 2] = 0f; values[3] = 0f
-                values[ 4] = -s;  values[ 5] = c;  values[ 6] = 0f; values[7] = 0f
-                values[ 8] =  0f;  values[ 9] = 0f;  values[10] = 1f; values[11] = 0f
+                arrays[ 0] =  c;  arrays[ 1] = s;  arrays[ 2] = 0f; arrays[3] = 0f
+                arrays[ 4] = -s;  arrays[ 5] = c;  arrays[ 6] = 0f; arrays[7] = 0f
+                arrays[ 8] =  0f;  arrays[ 9] = 0f;  arrays[10] = 1f; arrays[11] = 0f
             }
         }
 
@@ -192,9 +212,9 @@ object Mat3Utils {
             val s = sin(angleInRadians);
 
             return newDst.apply {
-                values[ 0] = 1f;  values[ 1] =  0f; values[ 2] = 0f; values[3] = 0f
-                values[ 4] = 0f;  values[ 5] =  c;  values[ 6] = s; values[7] = 0f
-                values[ 8] = 0f;  values[ 9] = -s;  values[10] = c; values[11] = 0f
+                arrays[ 0] = 1f;  arrays[ 1] =  0f; arrays[ 2] = 0f; arrays[3] = 0f
+                arrays[ 4] = 0f;  arrays[ 5] =  c;  arrays[ 6] = s; arrays[7] = 0f
+                arrays[ 8] = 0f;  arrays[ 9] = -s;  arrays[10] = c; arrays[11] = 0f
             }
         }
 
@@ -211,9 +231,9 @@ object Mat3Utils {
             val s = sin(angleInRadians);
 
             return newDst.apply {
-                values[ 0] = c;  values[ 1] = 0f;  values[ 2] = -s; values[3] = 0f
-                values[ 4] = 0f;  values[ 5] = 1f;  values[ 6] =  0f; values[7] = 0f
-                values[ 8] = s;  values[ 9] = 0f;  values[10] =  c; values[11] = 0f
+                arrays[ 0] = c;  arrays[ 1] = 0f;  arrays[ 2] = -s; arrays[3] = 0f
+                arrays[ 4] = 0f;  arrays[ 5] = 1f;  arrays[ 6] =  0f; arrays[7] = 0f
+                arrays[ 8] = s;  arrays[ 9] = 0f;  arrays[10] =  c; arrays[11] = 0f
             }
         }
 
@@ -234,13 +254,13 @@ object Mat3Utils {
          * @param dst - matrix to hold result. If null, a new one is created.
          * @returns The scaling matrix.
          */
-        fun scaling(v: Vec2Arg, dst: Mat3? = null): Mat3 {
+        fun scaling(v: Vec2, dst: Mat3? = null): Mat3 {
             val newDst = dst ?: Mat3()
 
             return newDst.apply {
-                values[ 0] = v[0];  values[ 1] = 0f;     values[ 2] = 0f; values[3] = 0f
-                values[ 4] = 0f;     values[ 5] = v[1];  values[ 6] = 0f; values[7] = 0f
-                values[ 8] = 0f;     values[ 9] = 0f;     values[10] = 1f; values[11] = 0f
+                arrays[ 0] = v.x;  arrays[ 1] = 0f;     arrays[ 2] = 0f; arrays[3] = 0f
+                arrays[ 4] = 0f;     arrays[ 5] = v.y;  arrays[ 6] = 0f; arrays[7] = 0f
+                arrays[ 8] = 0f;     arrays[ 9] = 0f;     arrays[10] = 1f; arrays[11] = 0f
             }
         }
 
@@ -252,13 +272,13 @@ object Mat3Utils {
          * @param dst - matrix to hold result. If not passed a new one is created.
          * @returns The scaling matrix.
          */
-        fun scaling3D(v: Vec3Arg, dst: Mat3? = null): Mat3 {
+        fun scaling3D(v: Vec3, dst: Mat3? = null): Mat3 {
             val newDst = dst ?: Mat3()
 
             return newDst.apply {
-                values[ 0] = v[0];  values[ 1] = 0f;     values[ 2] = 0f; values[3] = 0f
-                values[ 4] = 0f;     values[ 5] = v[1];  values[ 6] = 0f; values[7] = 0f
-                values[ 8] = 0f;     values[ 9] = 0f;     values[10] = v[2]; values[11] = 0f
+                arrays[ 0] = v[0];  arrays[ 1] = 0f;     arrays[ 2] = 0f; arrays[3] = 0f
+                arrays[ 4] = 0f;     arrays[ 5] = v[1];  arrays[ 6] = 0f; arrays[7] = 0f
+                arrays[ 8] = 0f;     arrays[ 9] = 0f;     arrays[10] = v[2]; arrays[11] = 0f
             }
         }
 
@@ -272,9 +292,9 @@ object Mat3Utils {
             val newDst = dst ?: Mat3()
 
             return newDst.apply {
-                values[ 0] = s;  values[ 1] = 0f;  values[ 2] = 0f; values[3] = 0f
-                values[ 4] = 0f;  values[ 5] = s;  values[ 6] = 0f; values[7] = 0f
-                values[ 8] = 0f;  values[ 9] = 0f;  values[10] = 1f; values[11] = 0f
+                arrays[ 0] = s;  arrays[ 1] = 0f;  arrays[ 2] = 0f; arrays[3] = 0f
+                arrays[ 4] = 0f;  arrays[ 5] = s;  arrays[ 6] = 0f; arrays[7] = 0f
+                arrays[ 8] = 0f;  arrays[ 9] = 0f;  arrays[10] = 1f; arrays[11] = 0f
             }
         }
 
@@ -288,9 +308,9 @@ object Mat3Utils {
             val newDst = dst ?: Mat3()
 
             return newDst.apply {
-                values[ 0] = s;  values[ 1] = 0f;  values[ 2] = 0f; values[3] = 0f
-                values[ 4] = 0f;  values[ 5] = s;  values[ 6] = 0f; values[7] = 0f
-                values[ 8] = 0f;  values[ 9] = 0f;  values[10] = s; values[11] = 0f
+                arrays[ 0] = s;  arrays[ 1] = 0f;  arrays[ 2] = 0f; arrays[3] = 0f
+                arrays[ 4] = 0f;  arrays[ 5] = s;  arrays[ 6] = 0f; arrays[7] = 0f
+                arrays[ 8] = 0f;  arrays[ 9] = 0f;  arrays[10] = s; arrays[11] = 0f
             }
         }
     }
@@ -301,7 +321,7 @@ object Mat3Utils {
      * the Mat3 class's intended usage and might lead to unexpected behavior
      * if the 12-element layout is not fully understood.
      */
-    fun toFloatArray(): FloatArray = values.copyOf() // Return a copy for safety
+    fun toFloatArray(): FloatArray = arrays.copyOf() // Return a copy for safety
 
     /**
      * Sets the values of this Mat3.
@@ -321,9 +341,9 @@ object Mat3Utils {
         v3: Float, v4: Float, v5: Float,
         v6: Float, v7: Float, v8: Float
     ): Mat3 = this.apply {
-        values[0] = v0;  values[1] = v1;  values[ 2] = v2;  values[ 3] = 0f;
-        values[4] = v3;  values[5] = v4;  values[ 6] = v5;  values[ 7] = 0f;
-        values[8] = v6;  values[9] = v7;  values[10] = v8;  values[11] = 0f;
+        arrays[0] = v0;  arrays[1] = v1;  arrays[ 2] = v2;  arrays[ 3] = 0f;
+        arrays[4] = v3;  arrays[5] = v4;  arrays[ 6] = v5;  arrays[ 7] = 0f;
+        arrays[8] = v6;  arrays[9] = v7;  arrays[10] = v8;  arrays[11] = 0f;
     }
 
     /**
@@ -335,9 +355,9 @@ object Mat3Utils {
         val newDst = dst ?: Mat3()
 
         return newDst.apply {
-            values[ 0] = -this@Mat3.values[ 0];  values[ 1] = -this@Mat3.values[ 1];  values[ 2] = -this@Mat3.values[ 2]; values[3] = 0f
-            values[ 4] = -this@Mat3.values[ 4];  values[ 5] = -this@Mat3.values[ 5];  values[ 6] = -this@Mat3.values[ 6]; values[7] = 0f
-            values[ 8] = -this@Mat3.values[ 8];  values[ 9] = -this@Mat3.values[ 9];  values[10] = -this@Mat3.values[10]; values[11] = 0f
+            arrays[ 0] = -this@Mat3.arrays[ 0];  arrays[ 1] = -this@Mat3.arrays[ 1];  arrays[ 2] = -this@Mat3.arrays[ 2]; arrays[3] = 0f
+            arrays[ 4] = -this@Mat3.arrays[ 4];  arrays[ 5] = -this@Mat3.arrays[ 5];  arrays[ 6] = -this@Mat3.arrays[ 6]; arrays[7] = 0f
+            arrays[ 8] = -this@Mat3.arrays[ 8];  arrays[ 9] = -this@Mat3.arrays[ 9];  arrays[10] = -this@Mat3.arrays[10]; arrays[11] = 0f
         }
     }
 
@@ -351,9 +371,9 @@ object Mat3Utils {
         val newDst = dst ?: Mat3()
 
         return newDst.apply {
-            values[ 0] = this@Mat3.values[ 0] * s;  values[ 1] = this@Mat3.values[ 1] * s;  values[ 2] = this@Mat3.values[ 2] * s; values[3] = 0f
-            values[ 4] = this@Mat3.values[ 4] * s;  values[ 5] = this@Mat3.values[ 5] * s;  values[ 6] = this@Mat3.values[ 6] * s; values[7] = 0f
-            values[ 8] = this@Mat3.values[ 8] * s;  values[ 9] = this@Mat3.values[ 9] * s;  values[10] = this@Mat3.values[10] * s; values[11] = 0f
+            arrays[ 0] = this@Mat3.arrays[ 0] * s;  arrays[ 1] = this@Mat3.arrays[ 1] * s;  arrays[ 2] = this@Mat3.arrays[ 2] * s; arrays[3] = 0f
+            arrays[ 4] = this@Mat3.arrays[ 4] * s;  arrays[ 5] = this@Mat3.arrays[ 5] * s;  arrays[ 6] = this@Mat3.arrays[ 6] * s; arrays[7] = 0f
+            arrays[ 8] = this@Mat3.arrays[ 8] * s;  arrays[ 9] = this@Mat3.arrays[ 9] * s;  arrays[10] = this@Mat3.arrays[10] * s; arrays[11] = 0f
         }
     }
 
@@ -367,9 +387,9 @@ object Mat3Utils {
         val newDst = dst ?: Mat3()
 
         return newDst.apply {
-            values[ 0] = this@Mat3.values[ 0] + other.values[ 0];  values[ 1] = this@Mat3.values[ 1] + other.values[ 1];  values[ 2] = this@Mat3.values[ 2] + other.values[ 2]; values[3] = 0f
-            values[ 4] = this@Mat3.values[ 4] + other.values[ 4];  values[ 5] = this@Mat3.values[ 5] + other.values[ 5];  values[ 6] = this@Mat3.values[ 6] + other.values[ 6]; values[7] = 0f
-            values[ 8] = this@Mat3.values[ 8] + other.values[ 8];  values[ 9] = this@Mat3.values[ 9] + other.values[ 9];  values[10] = this@Mat3.values[10] + other.values[10]; values[11] = 0f
+            arrays[ 0] = this@Mat3.arrays[ 0] + other.arrays[ 0];  arrays[ 1] = this@Mat3.arrays[ 1] + other.arrays[ 1];  arrays[ 2] = this@Mat3.arrays[ 2] + other.arrays[ 2]; arrays[3] = 0f
+            arrays[ 4] = this@Mat3.arrays[ 4] + other.arrays[ 4];  arrays[ 5] = this@Mat3.arrays[ 5] + other.arrays[ 5];  arrays[ 6] = this@Mat3.arrays[ 6] + other.arrays[ 6]; arrays[7] = 0f
+            arrays[ 8] = this@Mat3.arrays[ 8] + other.arrays[ 8];  arrays[ 9] = this@Mat3.arrays[ 9] + other.arrays[ 9];  arrays[10] = this@Mat3.arrays[10] + other.arrays[10]; arrays[11] = 0f
         }
     }
 
@@ -380,7 +400,7 @@ object Mat3Utils {
      */
     fun copy(dst: Mat3? = null): Mat3 {
         val newDst = dst ?: Mat3()
-        this.values.copyInto(newDst.values)
+        this.arrays.copyInto(newDst.arrays)
         return newDst
     }
 
@@ -397,15 +417,15 @@ object Mat3Utils {
      * @returns true if matrices are approximately equal.
      */
     fun equalsApproximately(other: Mat3): Boolean {
-        return kotlin.math.abs(values[ 0] - other.values[ 0]) < Mat3Utils.EPSILON &&
-                kotlin.math.abs(values[ 1] - other.values[ 1]) < Mat3Utils.EPSILON &&
-                kotlin.math.abs(values[ 2] - other.values[ 2]) < Mat3Utils.EPSILON &&
-                kotlin.math.abs(values[ 4] - other.values[ 4]) < Mat3Utils.EPSILON &&
-                kotlin.math.abs(values[ 5] - other.values[ 5]) < Mat3Utils.EPSILON &&
-                kotlin.math.abs(values[ 6] - other.values[ 6]) < Mat3Utils.EPSILON &&
-                kotlin.math.abs(values[ 8] - other.values[ 8]) < Mat3Utils.EPSILON &&
-                kotlin.math.abs(values[ 9] - other.values[ 9]) < Mat3Utils.EPSILON &&
-                kotlin.math.abs(values[10] - other.values[10]) < Mat3Utils.EPSILON
+        return kotlin.math.abs(arrays[ 0] - other.arrays[ 0]) < EPSILON &&
+                kotlin.math.abs(arrays[ 1] - other.arrays[ 1]) < EPSILON &&
+                kotlin.math.abs(arrays[ 2] - other.arrays[ 2]) < EPSILON &&
+                kotlin.math.abs(arrays[ 4] - other.arrays[ 4]) < EPSILON &&
+                kotlin.math.abs(arrays[ 5] - other.arrays[ 5]) < EPSILON &&
+                kotlin.math.abs(arrays[ 6] - other.arrays[ 6]) < EPSILON &&
+                kotlin.math.abs(arrays[ 8] - other.arrays[ 8]) < EPSILON &&
+                kotlin.math.abs(arrays[ 9] - other.arrays[ 9]) < EPSILON &&
+                kotlin.math.abs(arrays[10] - other.arrays[10]) < EPSILON
     }
 
     /**
@@ -415,29 +435,29 @@ object Mat3Utils {
      */
     override fun equals(other: Any?): Boolean {
         return other is Mat3 &&
-                values[ 0] == other.values[ 0] &&
-                values[ 1] == other.values[ 1] &&
-                values[ 2] == other.values[ 2] &&
-                values[ 4] == other.values[ 4] &&
-                values[ 5] == other.values[ 5] &&
-                values[ 6] == other.values[ 6] &&
-                values[ 8] == other.values[ 8] &&
-                values[ 9] == other.values[ 9] &&
-                values[10] == other.values[10]
+                arrays[ 0] == other.arrays[ 0] &&
+                arrays[ 1] == other.arrays[ 1] &&
+                arrays[ 2] == other.arrays[ 2] &&
+                arrays[ 4] == other.arrays[ 4] &&
+                arrays[ 5] == other.arrays[ 5] &&
+                arrays[ 6] == other.arrays[ 6] &&
+                arrays[ 8] == other.arrays[ 8] &&
+                arrays[ 9] == other.arrays[ 9] &&
+                arrays[10] == other.arrays[10]
     }
 
     override fun hashCode(): Int {
-        var result = values.contentHashCode()
+        var result = arrays.contentHashCode()
         // We only consider the relevant 9 elements for equality/hash code
-        result = 31 * result + values[0].hashCode()
-        result = 31 * result + values[1].hashCode()
-        result = 31 * result + values[2].hashCode()
-        result = 31 * result + values[4].hashCode()
-        result = 31 * result + values[5].hashCode()
-        result = 31 * result + values[6].hashCode()
-        result = 31 * result + values[8].hashCode()
-        result = 31 * result + values[9].hashCode()
-        result = 31 * result + values[10].hashCode()
+        result = 31 * result + arrays[0].hashCode()
+        result = 31 * result + arrays[1].hashCode()
+        result = 31 * result + arrays[2].hashCode()
+        result = 31 * result + arrays[4].hashCode()
+        result = 31 * result + arrays[5].hashCode()
+        result = 31 * result + arrays[6].hashCode()
+        result = 31 * result + arrays[8].hashCode()
+        result = 31 * result + arrays[9].hashCode()
+        result = 31 * result + arrays[10].hashCode()
         return result
     }
 
@@ -448,14 +468,14 @@ object Mat3Utils {
      * @param dst - matrix to hold result. If not passed a new one is created.
      * @returns A 3-by-3 identity matrix.
      */
-    fun identity(dst: Mat3Arg? = null): Mat3  {
-        val newDst = (dst ?: Mat3Arg(12));
+    fun identity(dst: Mat3? = null): Mat3  {
+        val newDst = (dst ?: Mat3());
 
-        newDst[ 0] = 1f;  newDst[ 1] = 0f;  newDst[ 2] = 0f;
-        newDst[ 4] = 0f;  newDst[ 5] = 1f;  newDst[ 6] = 0f;
-        newDst[ 8] = 0f;  newDst[ 9] = 0f;  newDst[10] = 1f;
+        newDst.arrays[ 0] = 1f;  newDst.arrays[ 1] = 0f;  newDst.arrays[ 2] = 0f;
+        newDst.arrays[ 4] = 0f;  newDst.arrays[ 5] = 1f;  newDst.arrays[ 6] = 0f;
+        newDst.arrays[ 8] = 0f;  newDst.arrays[ 9] = 0f;  newDst.arrays[10] = 1f;
 
-        return Mat3(newDst)
+        return newDst
     }
 
     /**
@@ -473,27 +493,27 @@ object Mat3Utils {
             // 4 5 6
             // 8 9 10
 
-            t = values[1]; values[1] = values[4]; values[4] = t;
-            t = values[2]; values[2] = values[8]; values[8] = t;
-            t = values[6]; values[6] = values[9]; values[9] = t;
+            t = arrays[1]; arrays[1] = arrays[4]; arrays[4] = t;
+            t = arrays[2]; arrays[2] = arrays[8]; arrays[8] = t;
+            t = arrays[6]; arrays[6] = arrays[9]; arrays[9] = t;
 
             return newDst
         }
 
-        val m00 = values[0 * 4 + 0]
-        val m01 = values[0 * 4 + 1]
-        val m02 = values[0 * 4 + 2]
-        val m10 = values[1 * 4 + 0]
-        val m11 = values[1 * 4 + 1]
-        val m12 = values[1 * 4 + 2]
-        val m20 = values[2 * 4 + 0]
-        val m21 = values[2 * 4 + 1]
-        val m22 = values[2 * 4 + 2]
+        val m00 = arrays[0 * 4 + 0]
+        val m01 = arrays[0 * 4 + 1]
+        val m02 = arrays[0 * 4 + 2]
+        val m10 = arrays[1 * 4 + 0]
+        val m11 = arrays[1 * 4 + 1]
+        val m12 = arrays[1 * 4 + 2]
+        val m20 = arrays[2 * 4 + 0]
+        val m21 = arrays[2 * 4 + 1]
+        val m22 = arrays[2 * 4 + 2]
 
         return newDst.apply {
-            values[ 0] = m00;  values[ 1] = m10;  values[ 2] = m20; values[3] = 0f
-            values[ 4] = m01;  values[ 5] = m11;  values[ 6] = m21; values[7] = 0f
-            values[ 8] = m02;  values[ 9] = m12;  values[10] = m22; values[11] = 0f
+            arrays[ 0] = m00;  arrays[ 1] = m10;  arrays[ 2] = m20; arrays[3] = 0f
+            arrays[ 4] = m01;  arrays[ 5] = m11;  arrays[ 6] = m21; arrays[7] = 0f
+            arrays[ 8] = m02;  arrays[ 9] = m12;  arrays[10] = m22; arrays[11] = 0f
         }
     }
 
@@ -505,15 +525,15 @@ object Mat3Utils {
     fun inverse(dst: Mat3? = null): Mat3 {
         val newDst = dst ?: Mat3()
 
-        val m00 = values[0 * 4 + 0]
-        val m01 = values[0 * 4 + 1]
-        val m02 = values[0 * 4 + 2]
-        val m10 = values[1 * 4 + 0]
-        val m11 = values[1 * 4 + 1]
-        val m12 = values[1 * 4 + 2]
-        val m20 = values[2 * 4 + 0]
-        val m21 = values[2 * 4 + 1]
-        val m22 = values[2 * 4 + 2]
+        val m00 = arrays[0 * 4 + 0]
+        val m01 = arrays[0 * 4 + 1]
+        val m02 = arrays[0 * 4 + 2]
+        val m10 = arrays[1 * 4 + 0]
+        val m11 = arrays[1 * 4 + 1]
+        val m12 = arrays[1 * 4 + 2]
+        val m20 = arrays[2 * 4 + 0]
+        val m21 = arrays[2 * 4 + 1]
+        val m22 = arrays[2 * 4 + 2]
 
         val b01 =  m22 * m11 - m12 * m21
         val b11 = -m22 * m10 + m12 * m20
@@ -527,15 +547,15 @@ object Mat3Utils {
         val invDet = 1 / det
 
         return newDst.apply {
-            values[ 0] = b01 * invDet; values[3] = 0f
-            values[ 1] = (-m22 * m01 + m02 * m21) * invDet; values[7] = 0f
-            values[ 2] = ( m12 * m01 - m02 * m11) * invDet; values[11] = 0f
-            values[ 4] = b11 * invDet
-            values[ 5] = ( m22 * m00 - m02 * m20) * invDet
-            values[ 6] = (-m12 * m00 + m02 * m10) * invDet
-            values[ 8] = b21 * invDet
-            values[ 9] = (-m21 * m00 + m01 * m20) * invDet
-            values[10] = ( m11 * m00 - m01 * m10) * invDet
+            arrays[ 0] = b01 * invDet; arrays[3] = 0f
+            arrays[ 1] = (-m22 * m01 + m02 * m21) * invDet; arrays[7] = 0f
+            arrays[ 2] = ( m12 * m01 - m02 * m11) * invDet; arrays[11] = 0f
+            arrays[ 4] = b11 * invDet
+            arrays[ 5] = ( m22 * m00 - m02 * m20) * invDet
+            arrays[ 6] = (-m12 * m00 + m02 * m10) * invDet
+            arrays[ 8] = b21 * invDet
+            arrays[ 9] = (-m21 * m00 + m01 * m20) * invDet
+            arrays[10] = ( m11 * m00 - m01 * m10) * invDet
         }
     }
 
@@ -544,15 +564,15 @@ object Mat3Utils {
      * @returns the determinant.
      */
     fun determinant(): Float {
-        val m00 = values[0 * 4 + 0]
-        val m01 = values[0 * 4 + 1]
-        val m02 = values[0 * 4 + 2]
-        val m10 = values[1 * 4 + 0]
-        val m11 = values[1 * 4 + 1]
-        val m12 = values[1 * 4 + 2]
-        val m20 = values[2 * 4 + 0]
-        val m21 = values[2 * 4 + 1]
-        val m22 = values[2 * 4 + 2]
+        val m00 = arrays[0 * 4 + 0]
+        val m01 = arrays[0 * 4 + 1]
+        val m02 = arrays[0 * 4 + 2]
+        val m10 = arrays[1 * 4 + 0]
+        val m11 = arrays[1 * 4 + 1]
+        val m12 = arrays[1 * 4 + 2]
+        val m20 = arrays[2 * 4 + 0]
+        val m21 = arrays[2 * 4 + 1]
+        val m22 = arrays[2 * 4 + 2]
 
         return m00 * (m11 * m22 - m21 * m12) -
                 m10 * (m01 * m22 - m21 * m02) +
@@ -575,35 +595,35 @@ object Mat3Utils {
     fun multiply(other: Mat3, dst: Mat3? = null): Mat3 {
         val newDst = dst ?: Mat3()
 
-        val a00 = values[0]
-        val a01 = values[1]
-        val a02 = values[2]
-        val a10 = values[ 4 + 0]
-        val a11 = values[ 4 + 1]
-        val a12 = values[ 4 + 2]
-        val a20 = values[ 8 + 0]
-        val a21 = values[ 8 + 1]
-        val a22 = values[ 8 + 2]
-        val b00 = other.values[0]
-        val b01 = other.values[1]
-        val b02 = other.values[2]
-        val b10 = other.values[ 4 + 0]
-        val b11 = other.values[ 4 + 1]
-        val b12 = other.values[ 4 + 2]
-        val b20 = other.values[ 8 + 0]
-        val b21 = other.values[ 8 + 1]
-        val b22 = other.values[ 8 + 2]
+        val a00 = arrays[0]
+        val a01 = arrays[1]
+        val a02 = arrays[2]
+        val a10 = arrays[ 4 + 0]
+        val a11 = arrays[ 4 + 1]
+        val a12 = arrays[ 4 + 2]
+        val a20 = arrays[ 8 + 0]
+        val a21 = arrays[ 8 + 1]
+        val a22 = arrays[ 8 + 2]
+        val b00 = other.arrays[0]
+        val b01 = other.arrays[1]
+        val b02 = other.arrays[2]
+        val b10 = other.arrays[ 4 + 0]
+        val b11 = other.arrays[ 4 + 1]
+        val b12 = other.arrays[ 4 + 2]
+        val b20 = other.arrays[ 8 + 0]
+        val b21 = other.arrays[ 8 + 1]
+        val b22 = other.arrays[ 8 + 2]
 
         return newDst.apply {
-            values[ 0] = a00 * b00 + a10 * b01 + a20 * b02; values[3] = 0f
-            values[ 1] = a01 * b00 + a11 * b01 + a21 * b02; values[7] = 0f
-            values[ 2] = a02 * b00 + a12 * b01 + a22 * b02; values[11] = 0f
-            values[ 4] = a00 * b10 + a10 * b11 + a20 * b12
-            values[ 5] = a01 * b10 + a11 * b11 + a21 * b12
-            values[ 6] = a02 * b10 + a12 * b11 + a22 * b12
-            values[ 8] = a00 * b20 + a10 * b21 + a20 * b22
-            values[ 9] = a01 * b20 + a11 * b21 + a21 * b22
-            values[10] = a02 * b20 + a12 * b21 + a22 * b22
+            arrays[ 0] = a00 * b00 + a10 * b01 + a20 * b02; arrays[3] = 0f
+            arrays[ 1] = a01 * b00 + a11 * b01 + a21 * b02; arrays[7] = 0f
+            arrays[ 2] = a02 * b00 + a12 * b01 + a22 * b02; arrays[11] = 0f
+            arrays[ 4] = a00 * b10 + a10 * b11 + a20 * b12
+            arrays[ 5] = a01 * b10 + a11 * b11 + a21 * b12
+            arrays[ 6] = a02 * b10 + a12 * b11 + a22 * b12
+            arrays[ 8] = a00 * b20 + a10 * b21 + a20 * b22
+            arrays[ 9] = a01 * b20 + a11 * b21 + a21 * b22
+            arrays[10] = a02 * b20 + a12 * b21 + a22 * b22
         }
     }
 
@@ -621,20 +641,20 @@ object Mat3Utils {
      * @param dst - matrix to hold result. If null, a new one is created (as an identity matrix).
      * @returns This matrix with translation set.
      */
-    fun setTranslation(v: Vec2Arg, dst: Mat3? = null): Mat3 {
+    fun setTranslation(v: Vec2, dst: Mat3? = null): Mat3 {
         val newDst = dst ?: identity() // Use identity if dst is null
 
         if (this !== newDst) {
-            newDst.values[ 0] = values[ 0];
-            newDst.values[ 1] = values[ 1];
-            newDst.values[ 2] = values[ 2];
-            newDst.values[ 4] = values[ 4];
-            newDst.values[ 5] = values[ 5];
-            newDst.values[ 6] = values[ 6];
+            newDst.arrays[ 0] = arrays[ 0];
+            newDst.arrays[ 1] = arrays[ 1];
+            newDst.arrays[ 2] = arrays[ 2];
+            newDst.arrays[ 4] = arrays[ 4];
+            newDst.arrays[ 5] = arrays[ 5];
+            newDst.arrays[ 6] = arrays[ 6];
         }
-        newDst.values[ 8] = v[0];
-        newDst.values[ 9] = v[1];
-        newDst.values[10] = 1f; // Ensure the bottom-right is 1 for translation
+        newDst.arrays[ 8] = v.x;
+        newDst.arrays[ 9] = v.y;
+        newDst.arrays[10] = 1f; // Ensure the bottom-right is 1 for translation
         return newDst
     }
 
@@ -644,12 +664,11 @@ object Mat3Utils {
      * @param dst - vector to hold result. If null, a new one is created.
      * @returns The translation component of this matrix.
      */
-    fun getTranslation(dst: Vec2Arg? = null): Vec2Arg {
-        TODO()
-//        val newDst = dst ?: Vec2.create()
-//        newDst[0] = values[8]
-//        newDst[1] = values[9]
-//        return newDst
+    fun getTranslation(dst: Vec2? = null): Vec2 {
+        val newDst = dst ?: Vec2.create()
+        newDst.x = arrays[8]
+        newDst.y = arrays[9]
+        return newDst
     }
 
     /**
@@ -658,13 +677,12 @@ object Mat3Utils {
      * @param dst - vector to hold result. If null, a new one is created.
      * @returns The axis component of this matrix.
      */
-    fun getAxis(axis: Int, dst: Vec2Arg? = null): Vec2Arg {
-        TODO()
-//        val newDst = dst ?: Vec2.create()
-//        val off = axis * 4
-//        newDst[0] = values[off + 0]
-//        newDst[1] = values[off + 1]
-//        return newDst
+    fun getAxis(axis: Int, dst: Vec2? = null): Vec2 {
+        val newDst = dst ?: Vec2.create()
+        val off = axis * 4
+        newDst.x = arrays[off + 0]
+        newDst.y = arrays[off + 1]
+        return newDst
     }
 
     /**
@@ -674,12 +692,12 @@ object Mat3Utils {
      * @param dst - The matrix to set. If null, a new one is created (as a copy of this).
      * @returns The matrix with axis set.
      */
-    fun setAxis(v: Vec2Arg, axis: Int, dst: Mat3? = null): Mat3 {
+    fun setAxis(v: Vec2, axis: Int, dst: Mat3? = null): Mat3 {
         val newDst = if (dst === this) this else copy(dst)
 
         val off = axis * 4
-        newDst.values[off + 0] = v[0]
-        newDst.values[off + 1] = v[1]
+        newDst.arrays[off + 0] = v.x
+        newDst.arrays[off + 1] = v.y
         return newDst
     }
 
@@ -688,19 +706,18 @@ object Mat3Utils {
      * @param dst - The vector to set. If null, a new one is created.
      * @returns The scaling vector.
      */
-    fun getScaling(dst: Vec2Arg? = null): Vec2Arg {
-        TODO()
-//        val newDst = dst ?: Vec2.create()
-//
-//        val xx = values[0]
-//        val xy = values[1]
-//        val yx = values[4]
-//        val yy = values[5]
-//
-//        newDst[0] = sqrt(xx * xx + xy * xy)
-//        newDst[1] = sqrt(yx * yx + yy * yy)
-//
-//        return newDst
+    fun getScaling(dst: Vec2? = null): Vec2 {
+        val newDst = dst ?: Vec2.create()
+
+        val xx = arrays[0]
+        val xy = arrays[1]
+        val yx = arrays[4]
+        val yy = arrays[5]
+
+        newDst.x = sqrt(xx * xx + xy * xy)
+        newDst.y = sqrt(yx * yx + yy * yy)
+
+        return newDst
     }
 
 
@@ -709,25 +726,24 @@ object Mat3Utils {
      * @param dst - The vector to set. If null, a new one is created.
      * @returns The scaling vector.
      */
-    fun get3DScaling(dst: Vec3Arg? = null): Vec3Arg {
-        TODO()
-//        val newDst = dst ?: Vec3.create()
-//
-//        val xx = values[0]
-//        val xy = values[1]
-//        val xz = values[2]
-//        val yx = values[4]
-//        val yy = values[5]
-//        val yz = values[6]
-//        val zx = values[8]
-//        val zy = values[9]
-//        val zz = values[10]
-//
-//        newDst[0] = sqrt(xx * xx + xy * xy + xz * xz)
-//        newDst[1] = sqrt(yx * yx + yy * yy + yz * yz)
-//        newDst[2] = sqrt(zx * zx + zy * zy + zz * zz)
-//
-//        return newDst
+    fun get3DScaling(dst: Vec3? = null): Vec3 {
+        val newDst = dst ?: Vec3.create()
+
+        val xx = this[0]
+        val xy = this[1]
+        val xz = this[2]
+        val yx = this[4]
+        val yy = this[5]
+        val yz = this[6]
+        val zx = this[8]
+        val zy = this[9]
+        val zz = this[10]
+
+        newDst[0] = sqrt(xx * xx + xy * xy + xz * xz)
+        newDst[1] = sqrt(yx * yx + yy * yy + yz * yz)
+        newDst[2] = sqrt(zx * zx + zy * zy + zz * zz)
+
+        return newDst
     }
 
     /**
@@ -736,34 +752,34 @@ object Mat3Utils {
      * @param dst - matrix to hold result. If null, a new one is created.
      * @returns The translated matrix.
      */
-    fun translate(v: Vec2Arg, dst: Mat3? = null): Mat3 {
+    fun translate(v: Vec2, dst: Mat3? = null): Mat3 {
         val newDst = dst ?: Mat3()
 
-        val v0 = v[0]
-        val v1 = v[1]
+        val v0 = v.x
+        val v1 = v.y
 
-        val m00 = values[0]
-        val m01 = values[1]
-        val m02 = values[2]
-        val m10 = values[1 * 4 + 0]
-        val m11 = values[1 * 4 + 1]
-        val m12 = values[1 * 4 + 2]
-        val m20 = values[2 * 4 + 0]
-        val m21 = values[2 * 4 + 1]
-        val m22 = values[2 * 4 + 2]
+        val m00 = arrays[0]
+        val m01 = arrays[1]
+        val m02 = arrays[2]
+        val m10 = arrays[1 * 4 + 0]
+        val m11 = arrays[1 * 4 + 1]
+        val m12 = arrays[1 * 4 + 2]
+        val m20 = arrays[2 * 4 + 0]
+        val m21 = arrays[2 * 4 + 1]
+        val m22 = arrays[2 * 4 + 2]
 
         if (this !== newDst) {
-            newDst.values[ 0] = m00
-            newDst.values[ 1] = m01
-            newDst.values[ 2] = m02
-            newDst.values[ 4] = m10
-            newDst.values[ 5] = m11
-            newDst.values[ 6] = m12
+            newDst.arrays[ 0] = m00
+            newDst.arrays[ 1] = m01
+            newDst.arrays[ 2] = m02
+            newDst.arrays[ 4] = m10
+            newDst.arrays[ 5] = m11
+            newDst.arrays[ 6] = m12
         }
 
-        newDst.values[ 8] = m00 * v0 + m10 * v1 + m20
-        newDst.values[ 9] = m01 * v0 + m11 * v1 + m21
-        newDst.values[10] = m02 * v0 + m12 * v1 + m22
+        newDst.arrays[ 8] = m00 * v0 + m10 * v1 + m20
+        newDst.arrays[ 9] = m01 * v0 + m11 * v1 + m21
+        newDst.arrays[10] = m02 * v0 + m12 * v1 + m22
 
         return newDst
     }
@@ -777,28 +793,28 @@ object Mat3Utils {
     fun rotate(angleInRadians: Float, dst: Mat3? = null): Mat3 {
         val newDst = dst ?: Mat3()
 
-        val m00 = values[0 * 4 + 0]
-        val m01 = values[0 * 4 + 1]
-        val m02 = values[0 * 4 + 2]
-        val m10 = values[1 * 4 + 0]
-        val m11 = values[1 * 4 + 1]
-        val m12 = values[1 * 4 + 2]
+        val m00 = arrays[0 * 4 + 0]
+        val m01 = arrays[0 * 4 + 1]
+        val m02 = arrays[0 * 4 + 2]
+        val m10 = arrays[1 * 4 + 0]
+        val m11 = arrays[1 * 4 + 1]
+        val m12 = arrays[1 * 4 + 2]
         val c = cos(angleInRadians)
         val s = sin(angleInRadians)
 
-        newDst.values[ 0] = c * m00 + s * m10
-        newDst.values[ 1] = c * m01 + s * m11
-        newDst.values[ 2] = c * m02 + s * m12; newDst.values[3] = 0f
+        newDst.arrays[ 0] = c * m00 + s * m10
+        newDst.arrays[ 1] = c * m01 + s * m11
+        newDst.arrays[ 2] = c * m02 + s * m12; newDst.arrays[3] = 0f
 
-        newDst.values[ 4] = c * m10 - s * m00
-        newDst.values[ 5] = c * m11 - s * m01
-        newDst.values[ 6] = c * m12 - s * m02; newDst.values[7] = 0f
+        newDst.arrays[ 4] = c * m10 - s * m00
+        newDst.arrays[ 5] = c * m11 - s * m01
+        newDst.arrays[ 6] = c * m12 - s * m02; newDst.arrays[7] = 0f
 
 
         if (this !== newDst) {
-            newDst.values[ 8] = values[ 8];
-            newDst.values[ 9] = values[ 9];
-            newDst.values[10] = values[10]; newDst.values[11] = 0f
+            newDst.arrays[ 8] = arrays[ 8];
+            newDst.arrays[ 9] = arrays[ 9];
+            newDst.arrays[10] = arrays[10]; newDst.arrays[11] = 0f
         }
 
         return newDst
@@ -813,27 +829,27 @@ object Mat3Utils {
     fun rotateX(angleInRadians: Float, dst: Mat3? = null): Mat3 {
         val newDst = dst ?: Mat3()
 
-        val m10 = values[4]
-        val m11 = values[5]
-        val m12 = values[6]
-        val m20 = values[8]
-        val m21 = values[9]
-        val m22 = values[10]
+        val m10 = arrays[4]
+        val m11 = arrays[5]
+        val m12 = arrays[6]
+        val m20 = arrays[8]
+        val m21 = arrays[9]
+        val m22 = arrays[10]
 
         val c = cos(angleInRadians)
         val s = sin(angleInRadians)
 
-        newDst.values[4]  = c * m10 + s * m20; newDst.values[7] = 0f
-        newDst.values[5]  = c * m11 + s * m21
-        newDst.values[6]  = c * m12 + s * m22
-        newDst.values[8]  = c * m20 - s * m10; newDst.values[11] = 0f
-        newDst.values[9]  = c * m21 - s * m11
-        newDst.values[10] = c * m22 - s * m12
+        newDst.arrays[4]  = c * m10 + s * m20; newDst.arrays[7] = 0f
+        newDst.arrays[5]  = c * m11 + s * m21
+        newDst.arrays[6]  = c * m12 + s * m22
+        newDst.arrays[8]  = c * m20 - s * m10; newDst.arrays[11] = 0f
+        newDst.arrays[9]  = c * m21 - s * m11
+        newDst.arrays[10] = c * m22 - s * m12
 
         if (this !== newDst) {
-            newDst.values[ 0] = values[ 0];
-            newDst.values[ 1] = values[ 1];
-            newDst.values[ 2] = values[ 2]; newDst.values[3] = 0f
+            newDst.arrays[ 0] = arrays[ 0];
+            newDst.arrays[ 1] = arrays[ 1];
+            newDst.arrays[ 2] = arrays[ 2]; newDst.arrays[3] = 0f
         }
 
         return newDst
@@ -848,26 +864,26 @@ object Mat3Utils {
     fun rotateY(angleInRadians: Float, dst: Mat3? = null): Mat3 {
         val newDst = dst ?: Mat3()
 
-        val m00 = values[0 * 4 + 0]
-        val m01 = values[0 * 4 + 1]
-        val m02 = values[0 * 4 + 2]
-        val m20 = values[2 * 4 + 0]
-        val m21 = values[2 * 4 + 1]
-        val m22 = values[2 * 4 + 2]
+        val m00 = arrays[0 * 4 + 0]
+        val m01 = arrays[0 * 4 + 1]
+        val m02 = arrays[0 * 4 + 2]
+        val m20 = arrays[2 * 4 + 0]
+        val m21 = arrays[2 * 4 + 1]
+        val m22 = arrays[2 * 4 + 2]
         val c = cos(angleInRadians)
         val s = sin(angleInRadians)
 
-        newDst.values[ 0] = c * m00 - s * m20; newDst.values[3] = 0f
-        newDst.values[ 1] = c * m01 - s * m21
-        newDst.values[ 2] = c * m02 - s * m22
-        newDst.values[ 8] = c * m20 + s * m00; newDst.values[11] = 0f
-        newDst.values[ 9] = c * m21 + s * m01
-        newDst.values[10] = c * m22 + s * m02
+        newDst.arrays[ 0] = c * m00 - s * m20; newDst.arrays[3] = 0f
+        newDst.arrays[ 1] = c * m01 - s * m21
+        newDst.arrays[ 2] = c * m02 - s * m22
+        newDst.arrays[ 8] = c * m20 + s * m00; newDst.arrays[11] = 0f
+        newDst.arrays[ 9] = c * m21 + s * m01
+        newDst.arrays[10] = c * m22 + s * m02
 
         if (this !== newDst) {
-            newDst.values[ 4] = values[ 4];
-            newDst.values[ 5] = values[ 5];
-            newDst.values[ 6] = values[ 6]; newDst.values[7] = 0f
+            newDst.arrays[ 4] = arrays[ 4];
+            newDst.arrays[ 5] = arrays[ 5];
+            newDst.arrays[ 6] = arrays[ 6]; newDst.arrays[7] = 0f
         }
 
         return newDst
@@ -889,24 +905,24 @@ object Mat3Utils {
      * @param dst - matrix to hold result. If null, a new one is created.
      * @returns The scaled matrix.
      */
-    fun scale(v: Vec2Arg, dst: Mat3? = null): Mat3 {
+    fun scale(v: Vec2, dst: Mat3? = null): Mat3 {
         val newDst = dst ?: Mat3()
 
-        val v0 = v[0]
-        val v1 = v[1]
+        val v0 = v.x
+        val v1 = v.y
 
-        newDst.values[ 0] = v0 * values[0 * 4 + 0]; newDst.values[3] = 0f
-        newDst.values[ 1] = v0 * values[0 * 4 + 1]
-        newDst.values[ 2] = v0 * values[0 * 4 + 2]
+        newDst.arrays[ 0] = v0 * arrays[0 * 4 + 0]; newDst.arrays[3] = 0f
+        newDst.arrays[ 1] = v0 * arrays[0 * 4 + 1]
+        newDst.arrays[ 2] = v0 * arrays[0 * 4 + 2]
 
-        newDst.values[ 4] = v1 * values[1 * 4 + 0]; newDst.values[7] = 0f
-        newDst.values[ 5] = v1 * values[1 * 4 + 1]
-        newDst.values[ 6] = v1 * values[1 * 4 + 2]
+        newDst.arrays[ 4] = v1 * arrays[1 * 4 + 0]; newDst.arrays[7] = 0f
+        newDst.arrays[ 5] = v1 * arrays[1 * 4 + 1]
+        newDst.arrays[ 6] = v1 * arrays[1 * 4 + 2]
 
         if (this !== newDst) {
-            newDst.values[ 8] = values[ 8];
-            newDst.values[ 9] = values[ 9];
-            newDst.values[10] = values[10]; newDst.values[11] = 0f
+            newDst.arrays[ 8] = arrays[ 8];
+            newDst.arrays[ 9] = arrays[ 9];
+            newDst.arrays[10] = arrays[10]; newDst.arrays[11] = 0f
         }
 
         return newDst
@@ -920,24 +936,24 @@ object Mat3Utils {
      * @param dst - matrix to hold result. If not passed a new one is created.
      * @returns The scaled matrix.
      */
-    fun scale3D(v: Vec3Arg, dst: Mat3? = null): Mat3 {
+    fun scale3D(v: Vec3, dst: Mat3? = null): Mat3 {
         val newDst = dst ?: Mat3()
 
         val v0 = v[0]
         val v1 = v[1]
         val v2 = v[2]
 
-        newDst.values[ 0] = v0 * values[0 * 4 + 0]; newDst.values[3] = 0f
-        newDst.values[ 1] = v0 * values[0 * 4 + 1]
-        newDst.values[ 2] = v0 * values[0 * 4 + 2]
+        newDst.arrays[ 0] = v0 * arrays[0 * 4 + 0]; newDst.arrays[3] = 0f
+        newDst.arrays[ 1] = v0 * arrays[0 * 4 + 1]
+        newDst.arrays[ 2] = v0 * arrays[0 * 4 + 2]
 
-        newDst.values[ 4] = v1 * values[1 * 4 + 0]; newDst.values[7] = 0f
-        newDst.values[ 5] = v1 * values[1 * 4 + 1]
-        newDst.values[ 6] = v1 * values[1 * 4 + 2]
+        newDst.arrays[ 4] = v1 * arrays[1 * 4 + 0]; newDst.arrays[7] = 0f
+        newDst.arrays[ 5] = v1 * arrays[1 * 4 + 1]
+        newDst.arrays[ 6] = v1 * arrays[1 * 4 + 2]
 
-        newDst.values[ 8] = v2 * values[2 * 4 + 0]; newDst.values[11] = 0f
-        newDst.values[ 9] = v2 * values[2 * 4 + 1]
-        newDst.values[10] = v2 * values[2 * 4 + 2]
+        newDst.arrays[ 8] = v2 * arrays[2 * 4 + 0]; newDst.arrays[11] = 0f
+        newDst.arrays[ 9] = v2 * arrays[2 * 4 + 1]
+        newDst.arrays[10] = v2 * arrays[2 * 4 + 2]
 
         return newDst
     }
@@ -951,18 +967,18 @@ object Mat3Utils {
     fun uniformScale(s: Float, dst: Mat3? = null): Mat3 {
         val newDst = dst ?: Mat3()
 
-        newDst.values[ 0] = s * values[0 * 4 + 0]; newDst.values[3] = 0f
-        newDst.values[ 1] = s * values[0 * 4 + 1]
-        newDst.values[ 2] = s * values[0 * 4 + 2]
+        newDst.arrays[ 0] = s * arrays[0 * 4 + 0]; newDst.arrays[3] = 0f
+        newDst.arrays[ 1] = s * arrays[0 * 4 + 1]
+        newDst.arrays[ 2] = s * arrays[0 * 4 + 2]
 
-        newDst.values[ 4] = s * values[1 * 4 + 0]; newDst.values[7] = 0f
-        newDst.values[ 5] = s * values[1 * 4 + 1]
-        newDst.values[ 6] = s * values[1 * 4 + 2]
+        newDst.arrays[ 4] = s * arrays[1 * 4 + 0]; newDst.arrays[7] = 0f
+        newDst.arrays[ 5] = s * arrays[1 * 4 + 1]
+        newDst.arrays[ 6] = s * arrays[1 * 4 + 2]
 
         if (this !== newDst) {
-            newDst.values[ 8] = values[ 8];
-            newDst.values[ 9] = values[ 9];
-            newDst.values[10] = values[10]; newDst.values[11] = 0f
+            newDst.arrays[ 8] = arrays[ 8];
+            newDst.arrays[ 9] = arrays[ 9];
+            newDst.arrays[10] = arrays[10]; newDst.arrays[11] = 0f
         }
 
         return newDst
@@ -977,54 +993,19 @@ object Mat3Utils {
     fun uniformScale3D(s: Float, dst: Mat3? = null): Mat3 {
         val newDst = dst ?: Mat3()
 
-        newDst.values[ 0] = s * values[0 * 4 + 0]; newDst.values[3] = 0f
-        newDst.values[ 1] = s * values[0 * 4 + 1]
-        newDst.values[ 2] = s * values[0 * 4 + 2]
+        newDst.arrays[ 0] = s * arrays[0 * 4 + 0]; newDst.arrays[3] = 0f
+        newDst.arrays[ 1] = s * arrays[0 * 4 + 1]
+        newDst.arrays[ 2] = s * arrays[0 * 4 + 2]
 
-        newDst.values[ 4] = s * values[1 * 4 + 0]; newDst.values[7] = 0f
-        newDst.values[ 5] = s * values[1 * 4 + 1]
-        newDst.values[ 6] = s * values[1 * 4 + 2]
+        newDst.arrays[ 4] = s * arrays[1 * 4 + 0]; newDst.arrays[7] = 0f
+        newDst.arrays[ 5] = s * arrays[1 * 4 + 1]
+        newDst.arrays[ 6] = s * arrays[1 * 4 + 2]
 
-        newDst.values[ 8] = s * values[2 * 4 + 0]; newDst.values[11] = 0f
-        newDst.values[ 9] = s * values[2 * 4 + 1]
-        newDst.values[10] = s * values[2 * 4 + 2]
+        newDst.arrays[ 8] = s * arrays[2 * 4 + 0]; newDst.arrays[11] = 0f
+        newDst.arrays[ 9] = s * arrays[2 * 4 + 1]
+        newDst.arrays[10] = s * arrays[2 * 4 + 2]
 
         return newDst
     }
 }
 
-// Example usage:
-fun main() {
-    val matA = Mat3(
-        1f, 2f, 3f,
-        4f, 5f, 6f,
-        7f, 8f, 9f
-    )
-    val matB = Mat3.identity()
-
-    println("MatA:")
-    println(matA.toFloatArray().joinToString())
-
-    println("MatB (Identity):")
-    println(matB.toFloatArray().joinToString())
-
-    val matC = matA.add(matB)
-    println("MatA + MatB:")
-    println(matC.toFloatArray().joinToString())
-
-    val matD = matA.multiplyScalar(2f)
-    println("MatA * 2:")
-    println(matD.toFloatArray().joinToString())
-
-    val matE = matA.transpose()
-    println("MatA Transpose:")
-    println(matE.toFloatArray().joinToString())
-
-    val matF = Mat3.translation(floatArrayOf(10f, 20f))
-    println("Translation Matrix:")
-    println(matF.toFloatArray().joinToString())
-
-    val matG = matA.translate(floatArrayOf(1f, 1f))
-    println("MatA Translated:")
-    println(matG.toFloatArray().joinToString())
-}
