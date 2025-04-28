@@ -63,7 +63,6 @@ private val cubeVertexArray = floatArrayOf(
     -1f, 1f, -1f, 1f,  0f, 1f, 0f, 1f,  1f, 0f,
 )
 
-
 fun main() = AutoClose.Companion {
     val window = WebGPUWindow(logLevel = WGPULogLevel_Info).ac
 
@@ -125,18 +124,19 @@ fun main() = AutoClose.Companion {
     val fragmentShader = device.createShaderModule(
         ShaderModuleDescriptor(
             code = """
+                @group(0) @binding(1) var mySampler: sampler;
+                @group(0) @binding(2) var myTexture: texture_2d<f32>;
+
                 @fragment
                 fn main(
                   @location(0) fragUV: vec2f,
                   @location(1) fragPosition: vec4f
                 ) -> @location(0) vec4f {
-                  return fragPosition;
+                  return textureSample(myTexture, mySampler, fragUV) * fragPosition;
                 }
             """.trimIndent()
         )
     ).ac
-
-
 
     // Create the render pipeline
     val pipeline = device.createRenderPipeline(
@@ -197,7 +197,36 @@ fun main() = AutoClose.Companion {
         )
     ).ac
 
-    // Create bind group for the uniform buffer
+    // Create a simple 1x1 texture with a solid color
+    val cubeTexture = device.createTexture(
+        TextureDescriptor(
+            size = Extent3D(1u, 1u, 1u),
+            format = GPUTextureFormat.RGBA8Unorm,
+            usage = setOf(GPUTextureUsage.TextureBinding, GPUTextureUsage.RenderAttachment)
+        )
+    ).ac
+
+    cubeTexture.
+
+
+    device.queue.writeTexture(
+        TexelCopyTextureInfo(cubeTexture),
+        data = bytes.toArrayBuffer(),
+        dataLayout = TexelCopyBufferLayout(bytesPerRow = w * 4),
+        size = Extent3D(width = w, height = h)
+    )
+
+
+
+    // Create a sampler
+    val sampler = device.createSampler(
+        SamplerDescriptor(
+            magFilter = GPUFilterMode.Linear,
+            minFilter = GPUFilterMode.Linear
+        )
+    ).ac
+
+    // Create bind group for the uniform buffer, sampler, and texture
     val uniformBindGroup = device.createBindGroup(
         BindGroupDescriptor(
             layout = pipeline.getBindGroupLayout(0u),
@@ -207,6 +236,14 @@ fun main() = AutoClose.Companion {
                     resource = BufferBinding(
                         buffer = uniformBuffer
                     )
+                ),
+                BindGroupEntry(
+                    binding = 1u,
+                    resource = sampler
+                ),
+                BindGroupEntry(
+                    binding = 2u,
+                    resource = cubeTexture.createView()
                 )
             )
         )

@@ -1,24 +1,13 @@
 package samples
 
 import platform.WebGPUWindow
-import io.ygdrasil.webgpu.Color
-import io.ygdrasil.webgpu.ColorTargetState
-import io.ygdrasil.webgpu.FragmentState
-import io.ygdrasil.webgpu.GPULoadOp
-import io.ygdrasil.webgpu.GPUPrimitiveTopology
-import io.ygdrasil.webgpu.GPUStoreOp
-import io.ygdrasil.webgpu.PrimitiveState
-import io.ygdrasil.webgpu.RenderPassColorAttachment
-import io.ygdrasil.webgpu.RenderPassDescriptor
-import io.ygdrasil.webgpu.RenderPipelineDescriptor
-import io.ygdrasil.webgpu.ShaderModuleDescriptor
-import io.ygdrasil.webgpu.SurfaceConfiguration
-import io.ygdrasil.webgpu.VertexState
+import io.ygdrasil.webgpu.*
+import io.ygdrasil.wgpu.WGPULogLevel_Info
 import kotlinx.coroutines.runBlocking
 import platform.AutoClose
 
 fun main() = AutoClose.Companion {
-    val window = WebGPUWindow().ac
+    val window = WebGPUWindow(logLevel = WGPULogLevel_Info).ac
 
     val adapter = window.requestAdapter().ac
 
@@ -33,21 +22,24 @@ fun main() = AutoClose.Companion {
         width = window.width, height = window.height
     )
 
+    // Set MSAA sample count
+    val sampleCount = 4u
+
     val shader = device.createShaderModule(
         ShaderModuleDescriptor(
             code = """
-                    @vertex
-                    fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4<f32> {
-                        let x = f32(i32(in_vertex_index) - 1);
-                        let y = f32(i32(in_vertex_index & 1u) * 2 - 1);
-                        return vec4<f32>(x, y, 0.0, 1.0);
-                    }
-                    
-                    @fragment
-                    fn fs_main() -> @location(0) vec4<f32> {
-                        return vec4<f32>(1.0, 0.0, 0.0, 1.0);
-                    }
-                """.trimIndent()
+                @vertex
+                fn vs_main(@builtin(vertex_index) in_vertex_index: u32) -> @builtin(position) vec4<f32> {
+                    let x = f32(i32(in_vertex_index) - 1);
+                    let y = f32(i32(in_vertex_index & 1u) * 2 - 1);
+                    return vec4<f32>(x, y, 0.0, 1.0);
+                }
+                
+                @fragment
+                fn fs_main() -> @location(0) vec4<f32> {
+                    return vec4<f32>(1.0, 0.0, 0.0, 1.0);
+                }
+            """.trimIndent()
         )
     ).ac
 
@@ -65,20 +57,36 @@ fun main() = AutoClose.Companion {
             ),
             primitive = PrimitiveState(
                 topology = GPUPrimitiveTopology.TriangleList
+            ),
+            multisample = MultisampleState(
+                count = sampleCount
             )
         )
     ).ac
 
+    // Create multisampled texture
+    val msaaTexture = device.createTexture(
+        TextureDescriptor(
+            size = Extent3D(window.width, window.height),
+            sampleCount = sampleCount,
+            format = presentationFormat,
+            usage = setOf(GPUTextureUsage.RenderAttachment)
+        )
+    ).ac
+    val msaaView = msaaTexture.createView()
+
     fun frame() = AutoClose.Companion {
         val commandEncoder = device.createCommandEncoder().ac
         val textureView = context.getCurrentTexture().texture.createView().ac
+        
         val renderPassDescriptor = RenderPassDescriptor(
             colorAttachments = listOf(
                 RenderPassColorAttachment(
-                    view = textureView,
+                    view = msaaView,
+                    resolveTarget = textureView,
                     clearValue = Color(0.0, 0.0, 0.0, 0.0),
                     loadOp = GPULoadOp.Clear,
-                    storeOp = GPUStoreOp.Store
+                    storeOp = GPUStoreOp.Discard
                 )
             )
         )

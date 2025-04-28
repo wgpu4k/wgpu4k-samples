@@ -23,10 +23,16 @@ import java.util.*
 import java.util.Queue
 
 @Suppress("EXPECT_ACTUAL_CLASSIFIERS_ARE_IN_BETA_WARNING")
-actual class WebGPUWindow actual constructor(actual val fps: Int, actual val width: UInt, actual val height: UInt, actual val title: String): AutoCloseable {
+actual class WebGPUWindow actual constructor(
+    actual val fps: Int ,
+    actual val width: UInt ,
+    actual val height: UInt ,
+    actual val title: String ,
+    actual val logLevel: UInt
+): AutoCloseable {
     init {
         LibraryLoader.load()
-        wgpuSetLogLevel(WGPULogLevel_Trace)
+        wgpuSetLogLevel(logLevel)
         val callback = WGPULogCallback.allocate(globalMemory) { level, cMessage, userdata ->
             val message = cMessage?.data?.toKString(cMessage.length) ?: "empty message"
             println("$level: $message")

@@ -63,7 +63,6 @@ private val cubeVertexArray = floatArrayOf(
     -1f, 1f, -1f, 1f,  0f, 1f, 0f, 1f,  1f, 0f,
 )
 
-
 fun main() = AutoClose.Companion {
     val window = WebGPUWindow(logLevel = WGPULogLevel_Info).ac
 
@@ -136,8 +135,6 @@ fun main() = AutoClose.Companion {
         )
     ).ac
 
-
-
     // Create the render pipeline
     val pipeline = device.createRenderPipeline(
         RenderPipelineDescriptor(
@@ -188,8 +185,11 @@ fun main() = AutoClose.Companion {
         )
     ).ac
 
-    // Create uniform buffer for the transformation matrix
-    val uniformBufferSize = 4 * 16 // 4x4 matrix
+    // Create uniform buffer for the transformation matrices
+    val matrixSize = 4 * 16 // 4x4 matrix
+    val offset = 256 // uniformBindGroup offset must be 256-byte aligned
+    val uniformBufferSize = offset + matrixSize
+
     val uniformBuffer = device.createBuffer(
         BufferDescriptor(
             size = uniformBufferSize.toULong(),
@@ -197,15 +197,34 @@ fun main() = AutoClose.Companion {
         )
     ).ac
 
-    // Create bind group for the uniform buffer
-    val uniformBindGroup = device.createBindGroup(
+
+    // Create bind groups for the uniform buffers
+    val uniformBindGroup1 = device.createBindGroup(
         BindGroupDescriptor(
             layout = pipeline.getBindGroupLayout(0u),
             entries = listOf(
                 BindGroupEntry(
                     binding = 0u,
                     resource = BufferBinding(
-                        buffer = uniformBuffer
+                        buffer = uniformBuffer,
+                        offset = 0uL,
+                        size = matrixSize.toULong()
+                    )
+                )
+            )
+        )
+    ).ac
+
+    val uniformBindGroup2 = device.createBindGroup(
+        BindGroupDescriptor(
+            layout = pipeline.getBindGroupLayout(0u),
+            entries = listOf(
+                BindGroupEntry(
+                    binding = 0u,
+                    resource = BufferBinding(
+                        buffer = uniformBuffer,
+                        offset = offset.toULong(),
+                        size = matrixSize.toULong()
                     )
                 )
             )
@@ -218,28 +237,47 @@ fun main() = AutoClose.Companion {
     // Calculate projection matrix
     val aspect = window.width.toFloat() / window.height.toFloat()
     val projectionMatrix = Mat4.perspective(2f * PI.toFloat() / 5f, aspect, 1f, 100.0f)
-    val modelViewProjectionMatrix = Mat4.identity()
+    
+    // Create model matrices
+    val modelMatrix1 = Mat4.translation(Vec3(-2f, 0f, 0f))
+    val modelMatrix2 = Mat4.translation(Vec3(2f, 0f, 0f))
+    val modelViewProjectionMatrix1 = Mat4.identity()
+    val modelViewProjectionMatrix2 = Mat4.identity()
+    val viewMatrix = Mat4.translation(Vec3(0f, 0f, -7f))
+    
+    val tmpMat41 = Mat4.identity()
+    val tmpMat42 = Mat4.identity()
 
     var frame = 0
 
-    // Function to get the transformation matrix
-    fun getTransformationMatrix(): Mat4 {
-        val viewMatrix = Mat4.identity()
-        viewMatrix.translate(Vec3(0f, 0f, -4f), viewMatrix)
+    // Function to update transformation matrices
+    fun updateTransformationMatrix() {
         val now = frame / 100f
-        viewMatrix.rotate(Vec3(sin(now), cos(now), 0f), 1f, viewMatrix)
-
-        projectionMatrix.multiply(viewMatrix, modelViewProjectionMatrix)
-        return modelViewProjectionMatrix
+        
+        modelMatrix1.rotate(Vec3(sin(now), cos(now), 0f), 1f, tmpMat41)
+        modelMatrix2.rotate(Vec3(cos(now), sin(now), 0f), 1f, tmpMat42)
+        
+        viewMatrix.multiply(tmpMat41, modelViewProjectionMatrix1)
+        projectionMatrix.multiply(modelViewProjectionMatrix1, modelViewProjectionMatrix1)
+        
+        viewMatrix.multiply(tmpMat42, modelViewProjectionMatrix2)
+        projectionMatrix.multiply(modelViewProjectionMatrix2, modelViewProjectionMatrix2)
     }
 
     fun frame() = AutoClose.Companion {
         frame++
-        val transformationMatrix = getTransformationMatrix()
+        updateTransformationMatrix()
+        
         device.queue.writeBuffer(
             uniformBuffer,
             0uL,
-            transformationMatrix.array
+            modelViewProjectionMatrix1.array
+        )
+        
+        device.queue.writeBuffer(
+            uniformBuffer,
+            offset.toULong(),
+            modelViewProjectionMatrix2.array
         )
 
         val textureView = context.getCurrentTexture().texture.createView().ac
@@ -265,9 +303,16 @@ fun main() = AutoClose.Companion {
         val commandEncoder = device.createCommandEncoder().ac
         val passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor)
         passEncoder.setPipeline(pipeline)
-        passEncoder.setBindGroup(0u, uniformBindGroup)
         passEncoder.setVertexBuffer(0u, verticesBuffer)
+        
+        // Draw first cube
+        passEncoder.setBindGroup(0u, uniformBindGroup1)
         passEncoder.draw(cubeVertexCount.toUInt())
+        
+        // Draw second cube
+        passEncoder.setBindGroup(0u, uniformBindGroup2)
+        passEncoder.draw(cubeVertexCount.toUInt())
+        
         passEncoder.end()
 
         device.queue.submit(listOf(commandEncoder.finish()))

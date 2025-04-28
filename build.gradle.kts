@@ -2,6 +2,14 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
 }
 
+repositories {
+    google()
+    mavenCentral()
+    //wgpu4k snapshot & preview repository
+    maven("https://gitlab.com/api/v4/projects/25805863/packages/maven")
+
+}
+
 
 kotlin {
     jvmToolchain {
@@ -15,6 +23,7 @@ kotlin {
             dependencies {
                 implementation(libs.wgpu4k)
                 implementation(libs.coroutines)
+                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.7.0")
             }
         }
         commonTest {
