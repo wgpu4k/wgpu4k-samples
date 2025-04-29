@@ -54,10 +54,10 @@ expect class WebGPUWindow(fps: Int = 60, width: UInt = 800u, height: UInt = 600u
 /**
  * Temporary replacement for the web copyExternalImageToTexture that is not available in other platforms
  */
-fun GPUDevice.copyExternalImageToTexture(source: ByteArray, texture: GPUTexture, width: Int, height: Int) {
+fun GPUDevice.copyExternalImageToTexture(source: ByteArray, texture: GPUTexture, width: Int, height: Int, origin: Origin3D = Origin3D()) {
     source.toArrayBuffer(this) { buffer ->
         queue.writeTexture(
-            TexelCopyTextureInfo(texture),
+            TexelCopyTextureInfo(texture, origin = origin),
             data = buffer,
             dataLayout = TexelCopyBufferLayout(bytesPerRow = width.toUInt() * 4u, rowsPerImage = height.toUInt()),
             size = Extent3D(width = width.toUInt(), height = height.toUInt())
