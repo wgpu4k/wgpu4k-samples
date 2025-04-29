@@ -1,3 +1,5 @@
+package platform
+
 import com.sun.jna.Pointer
 import com.sun.jna.platform.win32.Kernel32
 import darwin.CAMetalLayer
@@ -6,7 +8,6 @@ import ffi.LibraryLoader
 import ffi.globalMemory
 import io.ygdrasil.webgpu.*
 import io.ygdrasil.wgpu.WGPULogCallback
-import io.ygdrasil.wgpu.WGPULogLevel_Trace
 import io.ygdrasil.wgpu.wgpuSetLogCallback
 import io.ygdrasil.wgpu.wgpuSetLogLevel
 import org.lwjgl.glfw.GLFW.*
@@ -102,6 +103,7 @@ private enum class Os {
 
 private val os = System.getProperty("os.name").let { name ->
     when {
+        name == null -> error("Missing os.name property")
         arrayOf("Linux", "SunOS", "Unit").any { name.startsWith(it) } -> Os.Linux
         arrayOf("Mac OS X", "Darwin").any { name.startsWith(it) } -> Os.MacOs
         arrayOf("Windows").any { name.startsWith(it) } -> Os.Window

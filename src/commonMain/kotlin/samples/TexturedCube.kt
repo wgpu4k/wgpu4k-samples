@@ -6,7 +6,9 @@ import io.ygdrasil.wgpu.WGPULogLevel_Info
 import kotlinx.coroutines.runBlocking
 import matrix.Mat4
 import matrix.Vec3
+import org.intellij.lang.annotations.Language
 import platform.AutoClose
+import platform.copyExternalImageToTexture
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -62,6 +64,7 @@ private val cubeVertexArray = floatArrayOf(
     1f, -1f, -1f, 1f,  1f, 0f, 0f, 1f,  0f, 1f,
     -1f, 1f, -1f, 1f,  0f, 1f, 0f, 1f,  1f, 0f,
 )
+
 
 fun main() = AutoClose.Companion {
     val window = WebGPUWindow(logLevel = WGPULogLevel_Info).ac
@@ -121,12 +124,13 @@ fun main() = AutoClose.Companion {
         )
     ).ac
 
+
+    @Language("WGSL")
     val fragmentShader = device.createShaderModule(
         ShaderModuleDescriptor(
             code = """
                 @group(0) @binding(1) var mySampler: sampler;
                 @group(0) @binding(2) var myTexture: texture_2d<f32>;
-
                 @fragment
                 fn main(
                   @location(0) fragUV: vec2f,
@@ -196,27 +200,24 @@ fun main() = AutoClose.Companion {
             usage = setOf(GPUBufferUsage.Uniform, GPUBufferUsage.CopyDst)
         )
     ).ac
+    val image = platform.readImage(kotlinx.io.files.Path("src/commonMain/resources/Kotlin_Icon.png"))
 
     // Create a simple 1x1 texture with a solid color
     val cubeTexture = device.createTexture(
         TextureDescriptor(
-            size = Extent3D(1u, 1u, 1u),
-            format = GPUTextureFormat.RGBA8Unorm,
-            usage = setOf(GPUTextureUsage.TextureBinding, GPUTextureUsage.RenderAttachment)
+            size = Extent3D(image.width.toUInt(), image.height.toUInt(), 1u),
+            // We loaded srgb data from the png so we specify srgb here. If your data is in a linear color space you can do RGBA8Unorm instead
+            format = GPUTextureFormat.RGBA8UnormSrgb,
+            usage = setOf(GPUTextureUsage.TextureBinding, GPUTextureUsage.RenderAttachment, GPUTextureUsage.CopyDst)
         )
     ).ac
 
-    cubeTexture.
 
-
-    device.queue.writeTexture(
-        TexelCopyTextureInfo(cubeTexture),
-        data = bytes.toArrayBuffer(),
-        dataLayout = TexelCopyBufferLayout(bytesPerRow = w * 4),
-        size = Extent3D(width = w, height = h)
+    device.copyExternalImageToTexture(
+        source = image.bytes,
+        texture = cubeTexture,
+        width = image.width, height = image.height
     )
-
-
 
     // Create a sampler
     val sampler = device.createSampler(

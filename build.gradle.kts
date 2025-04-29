@@ -24,6 +24,13 @@ kotlin {
                 implementation(libs.wgpu4k)
                 implementation(libs.coroutines)
                 implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.7.0")
+                implementation("org.lwjgl:lwjgl-stb:3.3.6")
+                runtimeOnly("org.lwjgl:lwjgl-stb:3.3.6") {
+                    artifact {
+                        //TODO: do this for other platforms
+                        classifier = "natives-windows"
+                    }
+                }
             }
         }
         commonTest {

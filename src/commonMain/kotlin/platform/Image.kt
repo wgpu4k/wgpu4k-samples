@@ -1,6 +1,14 @@
 package platform
 
-import kotlinx.io.Buffer
 import kotlinx.io.files.Path
 
-expect fun readPNG(path: Path): ByteArray
+class Image(
+    val width: Int,
+    val height: Int,
+    val bytes: ByteArray,
+)
+
+/**
+ * Reads an image from the specified [path] to an array containing the individual pixels in RGBA format
+ */
+expect fun readImage(path: Path): Image
