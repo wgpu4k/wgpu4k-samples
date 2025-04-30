@@ -47,6 +47,10 @@ class Mat4 private constructor(val array: FloatArray) {
         return this.array[index]
     }
 
+    inline operator fun set(index: Int, value: Float) {
+         this.array[index] = value
+    }
+
     /**
      * Creates a new Mat4 with the given values.
      * The values are expected in column-major order, mapping to the
