@@ -2,12 +2,19 @@
 kotlin = "2.1.20"
 wgpu4k = "0.1.0.M1"
 coroutines = "1.10.1"
-
+matrix = "0.1.0"
+kotlinx-io = "0.7.0"
+lwjgl = "3.3.6"
 [libraries]
 wgpu4k = { module = "io.ygdrasil:wgpu4k-toolkit", version.ref = "wgpu4k" }
+matrix = {module = "io.github.natanfudge:wgpu4k-matrix", version.ref = "matrix"}
+kotlinx-io = {module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io"}
+lwjgl-stb = {module = "org.lwjgl:lwjgl-stb", version.ref = "lwjgl"}
 coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 
 
 [plugins]
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 
+[bundles]
+commonMain = ["wgpu4k", "matrix", "kotlinx-io", "coroutines"]

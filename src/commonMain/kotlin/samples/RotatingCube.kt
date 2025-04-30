@@ -1,11 +1,11 @@
 package samples
 
+import io.github.natanfudge.wgpu4k.matrix.Mat4
+import io.github.natanfudge.wgpu4k.matrix.Vec3
 import platform.WebGPUWindow
 import io.ygdrasil.webgpu.*
 import io.ygdrasil.wgpu.WGPULogLevel_Info
 import kotlinx.coroutines.runBlocking
-import matrix.Mat4
-import matrix.Vec3
 import platform.AutoClose
 import kotlin.math.PI
 import kotlin.math.cos

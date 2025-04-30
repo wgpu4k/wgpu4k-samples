@@ -7,7 +7,6 @@ repositories {
     mavenCentral()
     //wgpu4k snapshot & preview repository
     maven("https://gitlab.com/api/v4/projects/25805863/packages/maven")
-
 }
 
 
@@ -21,14 +20,11 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation(libs.wgpu4k)
-                implementation(libs.coroutines)
-                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.7.0")
-                implementation("org.lwjgl:lwjgl-stb:3.3.6")
-                runtimeOnly("org.lwjgl:lwjgl-stb:3.3.6") {
+                implementation(libs.bundles.commonMain)
+                implementation(libs.lwjgl.stb)
+                runtimeOnly(libs.lwjgl.stb.get().module.toString()) {
                     artifact {
-                        //TODO: do this for other platforms
-                        classifier = "natives-windows"
+                        classifier = "natives-${Platform.os}"
                     }
                 }
             }
@@ -54,9 +50,7 @@ object Platform {
         }
 }
 
-tasks.register<JavaExec>("runJvm") {
-    group = "run"
-    mainClass = "MainKt"
+tasks.withType<JavaExec> {
     if (Platform.os == "macos") {
         jvmArgs(
             "-XstartOnFirstThread",
@@ -69,7 +63,6 @@ tasks.register<JavaExec>("runJvm") {
             "--enable-native-access=ALL-UNNAMED"
         )
     }
-    classpath = sourceSets["main"].runtimeClasspath
 }
 
 

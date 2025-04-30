@@ -4,8 +4,8 @@ import platform.WebGPUWindow
 import io.ygdrasil.webgpu.*
 import io.ygdrasil.wgpu.WGPULogLevel_Info
 import kotlinx.coroutines.runBlocking
-import matrix.Mat4
-import matrix.Vec3
+import io.github.natanfudge.wgpu4k.matrix.Mat4
+import io.github.natanfudge.wgpu4k.matrix.Vec3
 import org.intellij.lang.annotations.Language
 import platform.AutoClose
 import platform.copyExternalImageToTexture
