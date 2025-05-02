@@ -202,7 +202,6 @@ fun main() = AutoClose.Companion {
     ).ac
     val image = platform.readImage(kotlinx.io.files.Path("src/commonMain/resources/Kotlin_Icon.png"))
 
-    // Create a simple 1x1 texture with a solid color
     val cubeTexture = device.createTexture(
         TextureDescriptor(
             size = Extent3D(image.width.toUInt(), image.height.toUInt(), 1u),
