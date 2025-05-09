@@ -4,8 +4,8 @@ import platform.WebGPUWindow
 import io.ygdrasil.webgpu.*
 import io.ygdrasil.wgpu.WGPULogLevel_Info
 import kotlinx.coroutines.runBlocking
-import io.github.natanfudge.wgpu4k.matrix.Mat4
-import io.github.natanfudge.wgpu4k.matrix.Vec3
+import io.github.natanfudge.wgpu4k.matrix.Mat4f
+import io.github.natanfudge.wgpu4k.matrix.Vec3f
 import platform.AutoClose
 import kotlin.math.PI
 import kotlin.math.cos
@@ -245,17 +245,17 @@ fun main() = AutoClose.Companion {
 
     // Calculate projection matrix
     val aspect = window.width.toFloat() / window.height.toFloat()
-    val projectionMatrix = Mat4.perspective(2f * PI.toFloat() / 5f, aspect, 1f, 100.0f)
-    val modelViewProjectionMatrix = Mat4.identity()
+    val projectionMatrix = Mat4f.perspective(2f * PI.toFloat() / 5f, aspect, 1f, 100.0f)
+    val modelViewProjectionMatrix = Mat4f.identity()
 
     var frame = 0
 
     // Function to get the transformation matrix
-    fun getTransformationMatrix(): Mat4 {
-        val viewMatrix = Mat4.identity()
-        viewMatrix.translate(Vec3(0f, 0f, -4f), viewMatrix)
+    fun getTransformationMatrix(): Mat4f {
+        val viewMatrix = Mat4f.identity()
+        viewMatrix.translate(Vec3f(0f, 0f, -4f), viewMatrix)
         val now = frame / 100f
-        viewMatrix.rotate(Vec3(sin(now), cos(now), 0f), 1f, viewMatrix)
+        viewMatrix.rotate(Vec3f(sin(now), cos(now), 0f), 1f, viewMatrix)
 
         projectionMatrix.multiply(viewMatrix, modelViewProjectionMatrix)
         return modelViewProjectionMatrix

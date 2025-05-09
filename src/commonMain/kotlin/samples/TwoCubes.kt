@@ -4,8 +4,8 @@ import platform.WebGPUWindow
 import io.ygdrasil.webgpu.*
 import io.ygdrasil.wgpu.WGPULogLevel_Info
 import kotlinx.coroutines.runBlocking
-import io.github.natanfudge.wgpu4k.matrix.Mat4
-import io.github.natanfudge.wgpu4k.matrix.Vec3
+import io.github.natanfudge.wgpu4k.matrix.Mat4f
+import io.github.natanfudge.wgpu4k.matrix.Vec3f
 import platform.AutoClose
 import kotlin.math.PI
 import kotlin.math.cos
@@ -236,17 +236,17 @@ fun main() = AutoClose.Companion {
 
     // Calculate projection matrix
     val aspect = window.width.toFloat() / window.height.toFloat()
-    val projectionMatrix = Mat4.perspective(2f * PI.toFloat() / 5f, aspect, 1f, 100.0f)
+    val projectionMatrix = Mat4f.perspective(2f * PI.toFloat() / 5f, aspect, 1f, 100.0f)
     
     // Create model matrices
-    val modelMatrix1 = Mat4.translation(Vec3(-2f, 0f, 0f))
-    val modelMatrix2 = Mat4.translation(Vec3(2f, 0f, 0f))
-    val modelViewProjectionMatrix1 = Mat4.identity()
-    val modelViewProjectionMatrix2 = Mat4.identity()
-    val viewMatrix = Mat4.translation(Vec3(0f, 0f, -7f))
+    val modelMatrix1 = Mat4f.translation(Vec3f(-2f, 0f, 0f))
+    val modelMatrix2 = Mat4f.translation(Vec3f(2f, 0f, 0f))
+    val modelViewProjectionMatrix1 = Mat4f.identity()
+    val modelViewProjectionMatrix2 = Mat4f.identity()
+    val viewMatrix = Mat4f.translation(Vec3f(0f, 0f, -7f))
     
-    val tmpMat41 = Mat4.identity()
-    val tmpMat42 = Mat4.identity()
+    val tmpMat4f1 = Mat4f.identity()
+    val tmpMat4f2 = Mat4f.identity()
 
     var frame = 0
 
@@ -254,13 +254,13 @@ fun main() = AutoClose.Companion {
     fun updateTransformationMatrix() {
         val now = frame / 100f
         
-        modelMatrix1.rotate(Vec3(sin(now), cos(now), 0f), 1f, tmpMat41)
-        modelMatrix2.rotate(Vec3(cos(now), sin(now), 0f), 1f, tmpMat42)
+        modelMatrix1.rotate(Vec3f(sin(now), cos(now), 0f), 1f, tmpMat4f1)
+        modelMatrix2.rotate(Vec3f(cos(now), sin(now), 0f), 1f, tmpMat4f2)
         
-        viewMatrix.multiply(tmpMat41, modelViewProjectionMatrix1)
+        viewMatrix.multiply(tmpMat4f1, modelViewProjectionMatrix1)
         projectionMatrix.multiply(modelViewProjectionMatrix1, modelViewProjectionMatrix1)
         
-        viewMatrix.multiply(tmpMat42, modelViewProjectionMatrix2)
+        viewMatrix.multiply(tmpMat4f2, modelViewProjectionMatrix2)
         projectionMatrix.multiply(modelViewProjectionMatrix2, modelViewProjectionMatrix2)
     }
 

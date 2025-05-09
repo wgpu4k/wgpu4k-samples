@@ -3,8 +3,8 @@ package samples
 import io.ygdrasil.webgpu.*
 import io.ygdrasil.wgpu.WGPULogLevel_Info
 import kotlinx.coroutines.runBlocking
-import io.github.natanfudge.wgpu4k.matrix.Mat4
-import io.github.natanfudge.wgpu4k.matrix.Vec3
+import io.github.natanfudge.wgpu4k.matrix.Mat4f
+import io.github.natanfudge.wgpu4k.matrix.Vec3f
 import platform.AutoClose
 import platform.WebGPUWindow
 import kotlin.math.PI
@@ -44,7 +44,7 @@ private const val numInstances = xCount * yCount
 private const val matrixFloatCount = 16 // 4x4 matrix
 private const val matrixStride = 4 * matrixFloatCount // 64;
 
-private val depthRangeRemapMatrix = Mat4.identity().apply {
+private val depthRangeRemapMatrix = Mat4f.identity().apply {
     this[10] = -1f
     this[14] = 1f
 }
@@ -579,7 +579,7 @@ fun main() = AutoClose.Companion {
 
 
     // --- Matrices & Data ---
-    val modelMatrices = Array(numInstances) { Mat4.identity() }
+    val modelMatrices = Array(numInstances) { Mat4f.identity() }
     val mvpMatricesData = FloatArray(matrixFloatCount * numInstances)
 
     var mIndex = 0
@@ -588,25 +588,25 @@ fun main() = AutoClose.Companion {
             val z = -800f * mIndex
             val s = 1f + 50f * mIndex
 
-            modelMatrices[mIndex] = Mat4.translation(
-                Vec3(
+            modelMatrices[mIndex] = Mat4f.translation(
+                Vec3f(
                     x.toFloat() - xCount.toFloat() / 2f + 0.5f,
                     (4.0f - 0.2f * z) * (y.toFloat() - yCount.toFloat() / 2f + 1.0f),
                     z
                 )
             )
-            modelMatrices[mIndex].scale(Vec3(s, s, s), modelMatrices[mIndex])
+            modelMatrices[mIndex].scale(Vec3f(s, s, s), modelMatrices[mIndex])
 
             mIndex++
         }
     }
 
-    val viewMatrix = Mat4.translation(Vec3(0f, 0f, -12f))
+    val viewMatrix = Mat4f.translation(Vec3f(0f, 0f, -12f))
 
     val aspect = (0.5f * window.width.toFloat()) / window.height.toFloat()
-    // Note: Kotlin Mat4.perspective might handle zFar = Infinity differently or not at all.
+    // Note: Kotlin Mat4f.perspective might handle zFar = Infinity differently or not at all.
     // Using a large finite number as in the original TS example.
-    val projectionMatrix = Mat4.perspective(2f * PI.toFloat() / 5f, aspect, 5f, 9999f)
+    val projectionMatrix = Mat4f.perspective(2f * PI.toFloat() / 5f, aspect, 5f, 9999f)
 
     val viewProjectionMatrix = projectionMatrix.multiply(viewMatrix)
     val reversedRangeViewProjectionMatrix = depthRangeRemapMatrix.multiply(viewProjectionMatrix)
@@ -614,7 +614,7 @@ fun main() = AutoClose.Companion {
     device.queue.writeBuffer(cameraMatrixBuffer, 0uL, viewProjectionMatrix.array)
     device.queue.writeBuffer(cameraMatrixReversedDepthBuffer, 0uL, reversedRangeViewProjectionMatrix.array)
 
-    val tmpMat4 = Mat4.identity()
+    val tmpMat4f = Mat4f.identity()
     var frameCount = 0
 
     // --- Settings --- (Replaces dat.gui)
@@ -626,13 +626,13 @@ fun main() = AutoClose.Companion {
 
         for (i in 0 until numInstances) {
             modelMatrices[i].rotate(
-                Vec3(sin(now), cos(now), 0f),
+                Vec3f(sin(now), cos(now), 0f),
                 (PI / 180.0 * 30.0).toFloat(), // Convert degrees to radians
-                tmpMat4
+                tmpMat4f
             )
             // Copy the rotated matrix data into the large mvpMatricesData array
             val offset = i * matrixFloatCount
-            tmpMat4.array.copyInto(mvpMatricesData, offset)
+            tmpMat4f.array.copyInto(mvpMatricesData, offset)
         }
     }
 

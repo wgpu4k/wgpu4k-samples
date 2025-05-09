@@ -14,7 +14,6 @@ This project is in **alpha**.
 Consequentially, other platforms could be trivially added. Contributions are welcome in this area.
 - The samples are almost directly converted from Javascript, which means code quality is poor. 
 This isn't a bad thing per se, as the goal is to stay faithful to the original samples. 
-- The samples use `wgpu4k-matrix`, which is experimental.
 - Some samples are missing (contributions welcome). 
 - There is currently no way to add GUIs to the samples like in JS. 
 # Available Samples

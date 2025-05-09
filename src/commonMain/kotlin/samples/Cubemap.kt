@@ -4,8 +4,8 @@ import platform.WebGPUWindow
 import io.ygdrasil.webgpu.*
 import io.ygdrasil.wgpu.WGPULogLevel_Info
 import kotlinx.coroutines.runBlocking
-import io.github.natanfudge.wgpu4k.matrix.Mat4
-import io.github.natanfudge.wgpu4k.matrix.Vec3
+import io.github.natanfudge.wgpu4k.matrix.Mat4f
+import io.github.natanfudge.wgpu4k.matrix.Vec3f
 import org.intellij.lang.annotations.Language
 import platform.AutoClose
 import platform.copyExternalImageToTexture
@@ -298,14 +298,14 @@ fun main() = AutoClose.Companion {
 
     // Calculate projection matrix
     val aspect = window.width.toFloat() / window.height.toFloat()
-    val projectionMatrix = Mat4.perspective(2f * PI.toFloat() / 5f, aspect, 1f, 3000.0f)
+    val projectionMatrix = Mat4f.perspective(2f * PI.toFloat() / 5f, aspect, 1f, 3000.0f)
     
     // Create model matrix with large scaling for skybox
-    val modelMatrix = Mat4.scaling(Vec3(1000f, 1000f, 1000f))
-    val modelViewProjectionMatrix = Mat4.identity()
-    val viewMatrix = Mat4.identity()
+    val modelMatrix = Mat4f.scaling(Vec3f(1000f, 1000f, 1000f))
+    val modelViewProjectionMatrix = Mat4f.identity()
+    val viewMatrix = Mat4f.identity()
     
-    val tmpMat4 = Mat4.identity()
+    val tmpMat4f = Mat4f.identity()
 
     var frame = 0
 
@@ -314,13 +314,13 @@ fun main() = AutoClose.Companion {
         val now = frame / 100f
         
         viewMatrix.rotate(
-            Vec3(1f, 0f, 0f),
+            Vec3f(1f, 0f, 0f),
             (PI.toFloat() / 10f) * sin(now),
-            tmpMat4
+            tmpMat4f
         )
-        tmpMat4.rotate(Vec3(0f, 1f, 0f), now * 0.2f, tmpMat4)
+        tmpMat4f.rotate(Vec3f(0f, 1f, 0f), now * 0.2f, tmpMat4f)
         
-        tmpMat4.multiply(modelMatrix, modelViewProjectionMatrix)
+        tmpMat4f.multiply(modelMatrix, modelViewProjectionMatrix)
         projectionMatrix.multiply(modelViewProjectionMatrix, modelViewProjectionMatrix)
     }
 

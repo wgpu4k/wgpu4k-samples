@@ -4,8 +4,8 @@ import platform.WebGPUWindow
 import io.ygdrasil.webgpu.*
 import io.ygdrasil.wgpu.WGPULogLevel_Info
 import kotlinx.coroutines.runBlocking
-import io.github.natanfudge.wgpu4k.matrix.Mat4
-import io.github.natanfudge.wgpu4k.matrix.Vec3
+import io.github.natanfudge.wgpu4k.matrix.Mat4f
+import io.github.natanfudge.wgpu4k.matrix.Vec3f
 import platform.AutoClose
 import kotlin.math.PI
 import kotlin.math.cos
@@ -222,10 +222,10 @@ fun main() = AutoClose.Companion {
 
     // Calculate projection matrix
     val aspect = window.width.toFloat() / window.height.toFloat()
-    val projectionMatrix = Mat4.perspective(2f * PI.toFloat() / 5f, aspect, 1f, 100.0f)
+    val projectionMatrix = Mat4f.perspective(2f * PI.toFloat() / 5f, aspect, 1f, 100.0f)
     
     // Initialize model matrices for each instance
-    val modelMatrices = Array(numInstances) { Mat4.identity() }
+    val modelMatrices = Array(numInstances) { Mat4f.identity() }
     val mvpMatricesData = FloatArray(matrixFloatCount * numInstances)
     
     // Define spacing between instances
@@ -235,8 +235,8 @@ fun main() = AutoClose.Companion {
     var m = 0
     for (x in 0 until xCount) {
         for (y in 0 until yCount) {
-            modelMatrices[m] = Mat4.translation(
-                Vec3(
+            modelMatrices[m] = Mat4f.translation(
+                Vec3f(
                     step * (x - xCount / 2 + 0.5f),
                     step * (y - yCount / 2 + 0.5f),
                     0f
@@ -247,10 +247,10 @@ fun main() = AutoClose.Companion {
     }
     
     // Create view matrix
-    val viewMatrix = Mat4.translation(Vec3(0f, 0f, -12f))
+    val viewMatrix = Mat4f.translation(Vec3f(0f, 0f, -12f))
     
     // Temporary matrix for calculations
-    val tmpMat4 = Mat4.identity()
+    val tmpMat4f = Mat4f.identity()
     
     var frame = 0
     
@@ -263,20 +263,20 @@ fun main() = AutoClose.Companion {
         for (x in 0 until xCount) {
             for (y in 0 until yCount) {
                 modelMatrices[i].rotate(
-                    Vec3(
+                    Vec3f(
                         sin((x + 0.5f) * now),
                         cos((y + 0.5f) * now),
                         0f
                     ),
                     1f,
-                    tmpMat4
+                    tmpMat4f
                 )
                 
-                viewMatrix.multiply(tmpMat4, tmpMat4)
-                projectionMatrix.multiply(tmpMat4, tmpMat4)
+                viewMatrix.multiply(tmpMat4f, tmpMat4f)
+                projectionMatrix.multiply(tmpMat4f, tmpMat4f)
                 
                 // Copy matrix data to the array
-                System.arraycopy(tmpMat4.array, 0, mvpMatricesData, m, matrixFloatCount)
+                System.arraycopy(tmpMat4f.array, 0, mvpMatricesData, m, matrixFloatCount)
                 
                 i++
                 m += matrixFloatCount
